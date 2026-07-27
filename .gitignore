@@ -42,3 +42,6 @@ graphify-out/
 
 # Local AI agent metadata
 .agents/
+
+# Local tool external directories
+external/
