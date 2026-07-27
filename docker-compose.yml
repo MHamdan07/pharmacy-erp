@@ -1,0 +1,41 @@
+version: '3.9'
+services:
+  mongo:
+    image: mongo:7.0
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_DATABASE: pharmacy_erp
+    volumes:
+      - mongo_data:/data/db
+    ports:
+      - 27017:27017
+  backend:
+    image: node:20-alpine
+    working_dir: /workspace/backend
+    volumes:
+      - ./backend:/workspace/backend
+    command: sh -c "npm install && npm run dev"
+    ports:
+      - 5000:5000
+    environment:
+      MONGO_URI: mongodb://mongo:27017/pharmacy_erp
+      NODE_ENV: development
+      CLIENT_URLS: http://localhost:5173,http://127.0.0.1:5173
+      JWT_ACCESS_SECRET: your_jwt_access_secret
+      JWT_REFRESH_SECRET: your_jwt_refresh_secret
+    depends_on:
+      - mongo
+  frontend:
+    image: node:20-alpine
+    working_dir: /workspace/frontend
+    volumes:
+      - ./frontend:/workspace/frontend
+    command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
+    ports:
+      - 5173:5173
+    environment:
+      CHOKIDAR_USEPOLLING: 'true'
+    depends_on:
+      - backend
+volumes:
+  mongo_data:

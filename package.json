@@ -1,0 +1,12 @@
+{
+  "name": "pharmacy-erp",
+  "private": true,
+  "workspaces": ["backend", "frontend"],
+  "scripts": {
+    "install": "npm install --workspaces",
+    "dev": "npx concurrently \"npm start --workspace backend\" \"npm start --workspace frontend\""
+  },
+  "devDependencies": {
+    "concurrently": "^8.0.0"
+  }
+}
