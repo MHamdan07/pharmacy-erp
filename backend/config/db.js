@@ -1,22 +1,30 @@
 import mongoose from 'mongoose';
 
 const connectDB = async () => {
+  const primaryUri = process.env.MONGO_URI;
+  const fallbackUri = 'mongodb://127.0.0.1:27017/pharmacy_erp';
+
   try {
-    const mongoUri = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/pharmacy_erp';
-    const conn = await mongoose.connect(mongoUri, {
-      serverSelectionTimeoutMS: 10000,
-      retryWrites: true,
-      w: 'majority',
-      tls: false,
-      dbName: 'pharmacy_erp',
+    const conn = await mongoose.connect(primaryUri || fallbackUri, {
+      serverSelectionTimeoutMS: 15000,
+      family: 4 // Use IPv4 to avoid ETIMEOUT on SRV DNS resolution
     });
     console.log(`🍃 MongoDB Connected: ${conn.connection.host}`);
   } catch (error) {
-    console.error(`❌ MongoDB Connection Error: ${error.message}`);
-    if (error.message.includes('TLS') || error.message.includes('ECONNRESET') || error.message.includes('ENOTFOUND')) {
-      console.error('💡 If this is an Atlas cluster, verify your IP is whitelisted in Network Access and that the Atlas username/password are correct.');
+    console.warn(`⚠️ Primary MongoDB Connection Failed: ${error.message}`);
+    if (primaryUri) {
+      console.log('🔄 Attempting fallback connection to local MongoDB (127.0.0.1:27017)...');
+      try {
+        const localConn = await mongoose.connect(fallbackUri, {
+          family: 4
+        });
+        console.log(`🍃 Local MongoDB Connected: ${localConn.connection.host}`);
+        return;
+      } catch (localErr) {
+        console.error(`❌ Local MongoDB also unavailable: ${localErr.message}`);
+      }
     }
-    process.exit(1);
+    console.error('💡 To fix MongoDB connection: Ensure your network allows outbound connections to MongoDB Atlas or start a local MongoDB service.');
   }
 };
 

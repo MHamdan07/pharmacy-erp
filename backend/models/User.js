@@ -1,33 +1,65 @@
 import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
 
 const userSchema = new mongoose.Schema(
   {
-    name: { type: String, required: true },
-    email: { type: String, required: true, unique: true, lowercase: true },
+    name: { type: String, required: true, trim: true },
+    email: { type: String, required: true, unique: true, lowercase: true, trim: true },
     password: { type: String, required: true, select: false },
-    role: { 
-      type: String, 
-      enum: ['Owner', 'Admin', 'Pharmacist', 'Cashier', 'Inventory Manager', 'Branch Manager'], 
-      default: 'Cashier' 
+    role: {
+      type: String,
+      enum: ['SuperAdmin', 'Owner', 'Admin', 'Pharmacist', 'Cashier', 'Inventory Manager', 'Branch Manager'],
+      default: 'Cashier'
     },
-    branch: { type: mongoose.Schema.Types.ObjectId, ref: 'Branch' },
-    isActive: { type: Boolean, default: true }
+    permissions: [{ type: String }],
+    pharmacy: { type: mongoose.Schema.Types.ObjectId, ref: 'Pharmacy', required: true },
+    branch: { type: mongoose.Schema.Types.ObjectId, ref: 'Branch', required: true },
+    assignedBranches: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Branch' }],
+    phone: { type: String, default: '' },
+    isActive: { type: Boolean, default: true },
+
+    // Security & Auth Enhancements
+    isEmailVerified: { type: Boolean, default: true },
+    emailVerificationToken: { type: String, default: null },
+    resetPasswordToken: { type: String, default: null },
+    resetPasswordExpire: { type: Date, default: null },
+    
+    // Account Lockout Protection
+    failedLoginAttempts: { type: Number, default: 0 },
+    lockUntil: { type: Date, default: null },
+
+    // Two-Factor Authentication (2FA)
+    twoFactorEnabled: { type: Boolean, default: false },
+    twoFactorCode: { type: String, default: null },
+    twoFactorCodeExpire: { type: Date, default: null }
   },
   { timestamps: true }
 );
 
-// Encrypt password before saving
+// Password Hashing Pre-save Hook
 userSchema.pre('save', async function (next) {
   if (!this.isModified('password')) return next();
   const salt = await bcrypt.genSalt(10);
   this.password = await bcrypt.hash(this.password, salt);
 });
 
-// Compare password
+// Compare Password Method
 userSchema.methods.matchPassword = async function (enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
 };
 
-// ⚠️ MAKE SURE THIS EXACT LINE IS AT THE VERY BOTTOM ⚠️
+// Check if Account is Locked
+userSchema.methods.isLocked = function () {
+  return !!(this.lockUntil && this.lockUntil > Date.now());
+};
+
+// Generate Reset Password Token Method
+userSchema.methods.getResetPasswordToken = function () {
+  const resetToken = crypto.randomBytes(20).toString('hex');
+  this.resetPasswordToken = crypto.createHash('sha256').update(resetToken).digest('hex');
+  this.resetPasswordExpire = Date.now() + 30 * 60 * 1000; // 30 minutes
+  return resetToken;
+};
+
 export default mongoose.model('User', userSchema);

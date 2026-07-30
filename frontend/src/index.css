@@ -1,1 +1,141 @@
 @import "tailwindcss";
+
+/* Enterprise Pharmacy ERP Light Mode & Dark Mode Styling System */
+
+:root {
+  color-scheme: dark;
+}
+
+/* Light Mode Overrides for Medical & Retail Pharmacy Staff User-Friendliness */
+html.light-mode {
+  color-scheme: light;
+  background-color: #f8fafc;
+  color: #0f172a;
+}
+
+html.light-mode body {
+  background-color: #f8fafc;
+  color: #0f172a;
+}
+
+/* Header & Sidebar in Light Mode */
+html.light-mode header,
+html.light-mode aside {
+  background-color: #ffffff !important;
+  border-color: #e2e8f0 !important;
+  color: #0f172a !important;
+}
+
+html.light-mode header h1,
+html.light-mode aside span,
+html.light-mode aside a {
+  color: #0f172a !important;
+}
+
+html.light-mode aside a:hover {
+  background-color: #f1f5f9 !important;
+  color: #2563eb !important;
+}
+
+/* Cards & Main Content Containers */
+html.light-mode .bg-slate-900,
+html.light-mode .bg-slate-950 {
+  background-color: #ffffff !important;
+  border-color: #e2e8f0 !important;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03) !important;
+}
+
+html.light-mode .bg-slate-900\/40,
+html.light-mode .bg-slate-800\/40,
+html.light-mode .bg-slate-800\/60,
+html.light-mode .bg-slate-800\/90 {
+  background-color: #f8fafc !important;
+  border-color: #e2e8f0 !important;
+}
+
+html.light-mode .bg-slate-800 {
+  background-color: #f1f5f9 !important;
+  border-color: #cbd5e1 !important;
+}
+
+/* Text Contrast */
+html.light-mode .text-white {
+  color: #0f172a !important;
+}
+
+html.light-mode .text-slate-300,
+html.light-mode .text-slate-400 {
+  color: #475569 !important;
+}
+
+html.light-mode .text-slate-500 {
+  color: #64748b !important;
+}
+
+/* Inputs & Form Fields */
+html.light-mode input,
+html.light-mode select,
+html.light-mode textarea {
+  background-color: #ffffff !important;
+  border-color: #cbd5e1 !important;
+  color: #0f172a !important;
+}
+
+html.light-mode input::placeholder {
+  color: #94a3b8 !important;
+}
+
+/* Tables */
+html.light-mode table thead {
+  background-color: #f1f5f9 !important;
+  color: #334155 !important;
+  border-color: #e2e8f0 !important;
+}
+
+html.light-mode table tbody tr {
+  border-color: #e2e8f0 !important;
+}
+
+html.light-mode table tbody tr:hover {
+  background-color: #f8fafc !important;
+}
+
+/* Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 9999px;
+}
+
+html.dark ::-webkit-scrollbar-thumb {
+  background: #334155;
+}
+
+/* Print Media Styles for Thermal Printers & Sticker Label Printing */
+@media print {
+  body * {
+    visibility: hidden !important;
+  }
+  .printable-label-sheet,
+  .printable-label-sheet * {
+    visibility: visible !important;
+  }
+  .printable-label-sheet {
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 10px !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+}

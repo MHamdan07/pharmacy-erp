@@ -1,13 +1,16 @@
 import { Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import Navbar from './Navbar';
+import Sidebar from './Sidebar';
 
 const ProtectedRoute = ({ allowedRoles }) => {
   const { user, loading } = useAuth();
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-slate-100">
-        <div className="text-slate-600 font-medium">Checking security session...</div>
+      <div className="flex items-center justify-center min-h-screen bg-slate-950 text-slate-300">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mr-3"></div>
+        <span>Authenticating session...</span>
       </div>
     );
   }
@@ -16,14 +19,23 @@ const ProtectedRoute = ({ allowedRoles }) => {
     return <Navigate to="/login" replace />;
   }
 
-  // Handles string roles directly (e.g. user.role = 'Owner')
   const userRole = typeof user.role === 'object' ? user.role?.name : user.role;
 
-  if (allowedRoles && !allowedRoles.includes(userRole)) {
-    return <Navigate to="/unauthorized" replace />;
+  if (allowedRoles && !allowedRoles.includes(userRole) && userRole !== 'Owner' && userRole !== 'SuperAdmin') {
+    return <Navigate to="/dashboard" replace />;
   }
 
-  return <Outlet />;
+  return (
+    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans">
+      <Navbar />
+      <div className="flex flex-1">
+        <Sidebar />
+        <main className="flex-1 p-6 overflow-y-auto max-w-7xl">
+          <Outlet />
+        </main>
+      </div>
+    </div>
+  );
 };
 
 export default ProtectedRoute;

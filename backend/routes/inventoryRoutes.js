@@ -1,43 +1,37 @@
 import express from 'express';
-import { protect } from '../middlewares/authMiddleware.js';
 import {
-  getCategories,
-  createCategory,
-  updateCategory,
-  deleteCategory,
-  getSuppliers,
-  createSupplier,
-  updateSupplier,
-  getMedicines,
-  createMedicine,
-  updateMedicine,
-  getPurchaseOrders,
-  createPurchaseOrder,
-  updatePurchaseOrder,
-  getPurchaseReceipts,
-  createPurchaseReceipt,
+  getCategories, createCategory,
+  getSuppliers, createSupplier,
+  getMedicines, createMedicine, updateMedicine, deleteMedicine,
+  getBatches, addBatch, updateBatch, deleteBatch
 } from '../controllers/inventoryController.js';
+import { protect } from '../middlewares/authMiddleware.js';
+import { attachTenant } from '../middlewares/tenantMiddleware.js';
+import { authorizeRoles } from '../middlewares/rbacMiddleware.js';
+import { subscriptionGatekeeper } from '../middlewares/subscriptionGatekeeperMiddleware.js';
 
 const router = express.Router();
 
-router.get('/categories', protect, getCategories);
-router.post('/categories', protect, createCategory);
-router.put('/categories/:id', protect, updateCategory);
-router.delete('/categories/:id', protect, deleteCategory);
+router.use(protect, attachTenant, subscriptionGatekeeper);
 
-router.get('/suppliers', protect, getSuppliers);
-router.post('/suppliers', protect, createSupplier);
-router.put('/suppliers/:id', protect, updateSupplier);
+// Categories
+router.get('/categories', getCategories);
+router.post('/categories', createCategory);
 
-router.get('/medicines', protect, getMedicines);
-router.post('/medicines', protect, createMedicine);
-router.put('/medicines/:id', protect, updateMedicine);
+// Suppliers
+router.get('/suppliers', getSuppliers);
+router.post('/suppliers', createSupplier);
 
-router.get('/purchase-orders', protect, getPurchaseOrders);
-router.post('/purchase-orders', protect, createPurchaseOrder);
-router.put('/purchase-orders/:id', protect, updatePurchaseOrder);
+// Medicines
+router.get('/medicines', getMedicines);
+router.post('/medicines', createMedicine);
+router.put('/medicines/:id', updateMedicine);
+router.delete('/medicines/:id', authorizeRoles('Owner', 'Admin'), deleteMedicine);
 
-router.get('/purchase-receipts', protect, getPurchaseReceipts);
-router.post('/purchase-receipts', protect, createPurchaseReceipt);
+// Batches (FEFO inventory)
+router.get('/batches', getBatches);
+router.post('/batches', addBatch);
+router.put('/batches/:id', updateBatch);
+router.delete('/batches/:id', authorizeRoles('Owner', 'Admin'), deleteBatch);
 
 export default router;

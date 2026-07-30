@@ -1,11 +1,31 @@
 import express from 'express';
-import { login, logout, getMe } from '../controllers/authController.js';
+import {
+  login,
+  registerStaff, getUsers, updateStaffUser, getMe, refreshToken, logout,
+  forgotPassword, resetPassword, toggle2FA
+} from '../controllers/authController.js';
 import { protect } from '../middlewares/authMiddleware.js';
+import { attachTenant } from '../middlewares/tenantMiddleware.js';
+import { authorizeRoles } from '../middlewares/rbacMiddleware.js';
 
 const router = express.Router();
 
+// Public Authentication Endpoints
 router.post('/login', login);
-router.get('/me', protect, getMe);
-router.post('/logout', protect, logout);
+
+router.post('/forgot-password', forgotPassword);
+router.post('/reset-password', resetPassword);
+router.post('/refresh-token', refreshToken);
+router.post('/logout', logout);
+
+// Protected Routes
+router.use(protect);
+router.get('/me', getMe);
+
+router.use(attachTenant);
+router.post('/toggle-2fa', toggle2FA);
+router.get('/users', authorizeRoles('Owner', 'Admin', 'Branch Manager'), getUsers);
+router.put('/users/:id', authorizeRoles('Owner', 'Admin', 'Branch Manager'), updateStaffUser);
+router.post('/register-staff', authorizeRoles('Owner', 'Admin', 'Branch Manager'), registerStaff);
 
 export default router;

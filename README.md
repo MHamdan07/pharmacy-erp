@@ -4,32 +4,57 @@ Full-stack multi-tenant pharmacy ERP for branch inventory, purchasing, sales, an
 
 ## Local setup
 
+### Backend
+
 1. Copy backend environment example:
    - `cd backend && cp .env.example .env`
-2. Copy frontend environment example:
-   - `cd frontend && cp .env.example .env`
-3. Install dependencies:
-   - `npm install`
-4. Start development servers:
-   - `npm run dev`
+2. Install backend dependencies:
+   - `cd backend && npm install`
+3. Start backend development server:
+   - `cd backend && npm run dev`
 
-## Backend
+### Frontend
+
+1. Copy frontend environment example:
+   - `cd frontend && cp .env.example .env`
+2. Install frontend dependencies:
+   - `cd frontend && npm install`
+3. Start frontend development server:
+   - `cd frontend && npm run dev`
+
+### Workspace
+
+If you want to run both projects from the repo root:
+
+```bash
+npm install
+npm run dev
+```
+
+### Backend
 
 - Entry point: `backend/server.js`
 - Environment variables: `backend/.env.example`
 - API prefix: `/api/v1`
 
-## Frontend
+### Frontend
 
 - Entry point: `frontend/src/main.jsx`
 - Axios base URL: `/api/v1`
 
-## Docker development
+### Docker development
 
-Run MongoDB locally with Docker Compose:
+The repo includes `docker-compose.yml` at the root.
+
+Start the stack with:
 
 ```bash
-docker compose up -d
+docker compose up --build
 ```
 
-This starts MongoDB on port `27017` and can be used by the backend with the example connection string.
+This will start MongoDB, the backend, and the frontend for local development.
+
+### Docs and agent plans
+
+- `docs/superpowers/plans/` contains the implementation plan.
+- `.agents/skills/pharmacy-erp/SKILL.md` contains the repository-specific pharmacy ERP agent guidance.

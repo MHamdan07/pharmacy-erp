@@ -1,0 +1,52 @@
+{
+  "communities": {
+    "0": [
+      "frontend_src_app_app"
+    ],
+    "1": [
+      "frontend_src_pages_dashboard_dashboard"
+    ],
+    "2": [
+      "frontend_src_pages_inventory_inventory"
+    ],
+    "3": [
+      "frontend_src_pages_login_login"
+    ]
+  },
+  "cohesion": {
+    "0": 1.0,
+    "1": 1.0,
+    "2": 1.0,
+    "3": 1.0
+  },
+  "gods": [
+    {
+      "id": "frontend_src_app_app",
+      "label": "App",
+      "degree": 0
+    },
+    {
+      "id": "frontend_src_pages_dashboard_dashboard",
+      "label": "Dashboard",
+      "degree": 0
+    },
+    {
+      "id": "frontend_src_pages_inventory_inventory",
+      "label": "Inventory",
+      "degree": 0
+    },
+    {
+      "id": "frontend_src_pages_login_login",
+      "label": "Login",
+      "degree": 0
+    }
+  ],
+  "surprises": [],
+  "questions": [
+    {
+      "type": "isolated_nodes",
+      "question": "What connects `App`, `Dashboard`, `Inventory` to the rest of the system?",
+      "why": "4 weakly-connected nodes found - possible documentation gaps or missing edges."
+    }
+  ]
+}

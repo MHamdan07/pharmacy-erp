@@ -1,0 +1,49 @@
+{
+  "directed": false,
+  "multigraph": false,
+  "graph": {},
+  "nodes": [
+    {
+      "label": "App",
+      "file_type": "code",
+      "source_file": "frontend/src/App.jsx",
+      "source_location": "L8",
+      "_origin": "ast",
+      "id": "frontend_src_app_app",
+      "community": 0,
+      "norm_label": "app"
+    },
+    {
+      "label": "Dashboard",
+      "file_type": "code",
+      "source_file": "frontend/src/pages/Dashboard.jsx",
+      "source_location": "L4",
+      "_origin": "ast",
+      "id": "frontend_src_pages_dashboard_dashboard",
+      "community": 1,
+      "norm_label": "dashboard"
+    },
+    {
+      "label": "Inventory",
+      "file_type": "code",
+      "source_file": "frontend/src/pages/Inventory.jsx",
+      "source_location": "L4",
+      "_origin": "ast",
+      "id": "frontend_src_pages_inventory_inventory",
+      "community": 2,
+      "norm_label": "inventory"
+    },
+    {
+      "label": "Login",
+      "file_type": "code",
+      "source_file": "frontend/src/pages/Login.jsx",
+      "source_location": "L5",
+      "_origin": "ast",
+      "id": "frontend_src_pages_login_login",
+      "community": 3,
+      "norm_label": "login"
+    }
+  ],
+  "links": [],
+  "hyperedges": []
+}
