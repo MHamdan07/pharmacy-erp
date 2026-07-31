@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import API from '../api/axios';
 
 export const AuthContext = createContext();
-export { useAuth } from './useAuth';
+export { useAuth } from '../hooks/useAuth';
 
 export const AuthProvider = ({ children }) => {
   const navigate = useNavigate();

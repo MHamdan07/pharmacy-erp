@@ -1,7 +1,7 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import ProtectedRoute from './components/ProtectedRoute';
 import FeatureProtectedRoute from './components/FeatureProtectedRoute';
-import SubscriptionGatekeeper from './components/SubscriptionGatekeeper';
+import MainLayout from './layouts/MainLayout';
 import Login from './pages/Login';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
@@ -24,21 +24,16 @@ import PharmacySubscription from './pages/PharmacySubscription';
 function App() {
   return (
     <Routes>
-      {/* Pharmacy ERP Public Routes */}
+      {/* Public Auth Routes */}
       <Route path="/login" element={<Login />} />
       <Route path="/app/login" element={<Login />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/register-tenant" element={<RegisterTenant />} />
 
-      {/* Protected Pharmacy ERP Operation Routes */}
+      {/* Protected Operations Layout Shell */}
       <Route element={<ProtectedRoute />}>
-        {/* Subscription Plan & Account Settings accessible regardless of subscription state */}
-        <Route path="/settings/subscription" element={<PharmacySubscription />} />
-        <Route path="/settings/pharmacy" element={<PharmacySettings />} />
-
-        {/* Subscription Gatekeeper Security Gate */}
-        <Route element={<SubscriptionGatekeeper />}>
+        <Route element={<MainLayout />}>
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/pos" element={<POSBilling />} />
           <Route path="/inventory" element={<Inventory />} />
@@ -48,8 +43,10 @@ function App() {
           <Route path="/purchases" element={<PurchasesSuppliers />} />
           <Route path="/customers" element={<CustomersPatients />} />
           <Route path="/reports" element={<ReportsAnalytics />} />
+          <Route path="/settings/subscription" element={<PharmacySubscription />} />
+          <Route path="/settings/pharmacy" element={<PharmacySettings />} />
 
-          {/* Feature Subscription Gated Routes */}
+          {/* Feature-Gated Plan Routes */}
           <Route element={<FeatureProtectedRoute flagName="transfers" requiredPlan="Professional" />}>
             <Route path="/transfers" element={<StockTransfers />} />
           </Route>
