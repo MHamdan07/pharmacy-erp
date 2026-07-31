@@ -84,7 +84,11 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Start Server
-app.listen(PORT, () => {
-  console.log(`🚀 Multi-Tenant Pharmacy ERP Server running on port ${PORT}`);
-});
+// Start Server (only if not running on Vercel)
+if (!process.env.VERCEL) {
+  app.listen(PORT, () => {
+    console.log(`🚀 Multi-Tenant Pharmacy ERP Server running on port ${PORT}`);
+  });
+}
+
+export default app;

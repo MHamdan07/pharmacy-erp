@@ -40,3 +40,8 @@ Thumbs.db
 .agents/
 .gemini/
 scratch/
+
+# Turbo & Vercel
+.turbo/
+.vercel/
+

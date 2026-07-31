@@ -1,12 +1,16 @@
 {
   "name": "pharmacy-erp",
   "private": true,
-  "workspaces": ["backend", "frontend"],
+  "packageManager": "npm@11.10.0",
+  "workspaces": [
+    "backend",
+    "frontend"
+  ],
   "scripts": {
-    "install": "npm install --workspaces",
-    "dev": "npx concurrently \"npm start --workspace backend\" \"npm start --workspace frontend\""
+    "build": "turbo run build"
   },
   "devDependencies": {
-    "concurrently": "^8.0.0"
+    "concurrently": "^8.0.0",
+    "turbo": "^2.0.0"
   }
 }

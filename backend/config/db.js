@@ -1,6 +1,10 @@
 import mongoose from 'mongoose';
 
 const connectDB = async () => {
+  if (mongoose.connection.readyState >= 1) {
+    return;
+  }
+
   const primaryUri = process.env.MONGO_URI;
   const fallbackUri = 'mongodb://127.0.0.1:27017/pharmacy_erp';
 
