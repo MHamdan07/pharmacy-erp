@@ -1,6 +1,7 @@
 {
   "name": "pharmacy-erp",
   "private": true,
+  "type": "module",
   "packageManager": "npm@11.10.0",
   "workspaces": [
     "backend",
