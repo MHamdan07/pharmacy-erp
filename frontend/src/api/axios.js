@@ -1,7 +1,13 @@
 import axios from 'axios';
 
+const defaultApiUrl =
+  import.meta.env.VITE_API_URL ||
+  (typeof window !== 'undefined' && window.location.hostname.includes('pharmacy-erp-frontend-')
+    ? 'https://pharmacy-erp-zeta.vercel.app/api/v1'
+    : '/api/v1');
+
 const API = axios.create({
-  baseURL: '/api/v1',
+  baseURL: defaultApiUrl,
   withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
