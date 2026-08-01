@@ -1,5 +1,4 @@
-import { useState, useEffect } from 'react';
-import { useAuth } from '../context/AuthContext';
+import { useState, useEffect, useCallback } from 'react';
 import API from '../api/axios';
 import {
   Truck, Plus, Search, Calendar, DollarSign, FileText, CheckCircle2,
@@ -8,16 +7,13 @@ import {
 } from 'lucide-react';
 
 const PurchasesSuppliers = () => {
-  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('purchases');
   const [purchases, setPurchases] = useState([]);
   const [suppliers, setSuppliers] = useState([]);
-  const [medicines, setMedicines] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
 
   // Modals & Drawers
   const [showAddSupplierModal, setShowAddSupplierModal] = useState(false);
-  const [showCreatePoModal, setShowCreatePoModal] = useState(false);
   const [receivingPo, setReceivingPo] = useState(null);
   const [paymentSupplier, setPaymentSupplier] = useState(null);
   const [selectedSupplierHistory, setSelectedSupplierHistory] = useState(null);
@@ -33,28 +29,6 @@ const PurchasesSuppliers = () => {
     rating: 5
   });
 
-  // New Purchase Order Form State
-  const [poForm, setPoForm] = useState({
-    supplierId: '',
-    supplierInvoiceNumber: '',
-    invoiceDocumentUrl: '',
-    notes: '',
-    paidAmount: 0,
-    items: [
-      {
-        medicineId: '',
-        medicineName: '',
-        orderedQuantity: 100,
-        batchNumber: `BT-${Math.floor(100 + Math.random() * 900)}`,
-        expiryDate: new Date(Date.now() + 365*24*60*60*1000).toISOString().slice(0, 10),
-        costPrice: 5.00,
-        sellingPrice: 10.00,
-        taxRate: 5,
-        rackNumber: 'Rack A-1'
-      }
-    ]
-  });
-
   // Receive GRN Items Form State (Supports Partial Delivery!)
   const [receiveItemsState, setReceiveItemsState] = useState([]);
 
@@ -65,11 +39,7 @@ const PurchasesSuppliers = () => {
     notes: ''
   });
 
-  useEffect(() => {
-    fetchData();
-  }, [activeTab]);
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       if (activeTab === 'purchases') {
         const res = await API.get('/purchases');
@@ -77,13 +47,14 @@ const PurchasesSuppliers = () => {
       }
       const supRes = await API.get('/inventory/suppliers');
       setSuppliers(supRes.data || []);
-
-      const medRes = await API.get('/inventory/medicines');
-      setMedicines(medRes.data || []);
     } catch (err) {
       console.error('Failed to load purchases/suppliers data:', err);
     }
-  };
+  }, [activeTab]);
+
+  useEffect(() => {
+    fetchData();
+  }, [activeTab, fetchData]);
 
   const handleCreateSupplier = async (e) => {
     e.preventDefault();
@@ -94,33 +65,6 @@ const PurchasesSuppliers = () => {
       fetchData();
     } catch (err) {
       alert(err.response?.data?.message || 'Failed to add supplier');
-    }
-  };
-
-  const handleCreatePo = async (e) => {
-    e.preventDefault();
-    try {
-      // Calculate totals
-      let subtotal = 0;
-      let taxAmount = 0;
-      poForm.items.forEach(item => {
-        const lineTotal = item.costPrice * item.orderedQuantity;
-        subtotal += lineTotal;
-        taxAmount += lineTotal * (item.taxRate / 100);
-      });
-      const grandTotal = subtotal + taxAmount;
-
-      await API.post('/purchases/orders', {
-        ...poForm,
-        subtotal,
-        taxAmount,
-        grandTotal
-      });
-
-      setShowCreatePoModal(false);
-      fetchData();
-    } catch (err) {
-      alert(err.response?.data?.message || 'Failed to create purchase order');
     }
   };
 
@@ -204,10 +148,10 @@ const PurchasesSuppliers = () => {
             <Plus className="w-4 h-4" /> Add Supplier Profile
           </button>
           <button
-            onClick={() => setShowCreatePoModal(true)}
+            onClick={() => setShowAddSupplierModal(true)}
             className="bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold px-4 py-2.5 rounded-xl shadow-md flex items-center gap-1.5 cursor-pointer"
           >
-            <Plus className="w-4 h-4" /> Create Purchase Order
+            <Plus className="w-4 h-4" /> Add Supplier Profile
           </button>
         </div>
       </div>

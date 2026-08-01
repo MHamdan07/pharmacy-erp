@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import API from '../api/axios';
 import {
   Barcode, QrCode, Printer, Search, Tag, Layers, Pill,
@@ -15,11 +15,7 @@ const BarcodeLabels = () => {
   const [stickerCopies, setStickerCopies] = useState(10);
   const [isScanning, setIsScanning] = useState(false);
 
-  useEffect(() => {
-    fetchMedicines();
-  }, []);
-
-  const fetchMedicines = async () => {
+  const fetchMedicines = useCallback(async () => {
     try {
       const res = await API.get('/inventory/medicines');
       setMedicines(res.data || []);
@@ -29,7 +25,11 @@ const BarcodeLabels = () => {
     } catch (err) {
       console.error('Failed to load medicines for barcode labeling:', err);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchMedicines();
+  }, [fetchMedicines]);
 
   const handlePrintLabels = () => {
     window.print();

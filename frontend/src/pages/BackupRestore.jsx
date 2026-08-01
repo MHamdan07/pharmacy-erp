@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import API from '../api/axios';
 import {
   Database, Download, RefreshCw, CheckCircle, ShieldAlert,
@@ -14,11 +14,7 @@ const BackupRestore = () => {
   const [schedule, setSchedule] = useState('manual');
   const [target, setTarget] = useState('local');
 
-  useEffect(() => {
-    fetchBackups();
-  }, []);
-
-  const fetchBackups = async () => {
+  const fetchBackups = useCallback(async () => {
     try {
       setLoading(true);
       const res = await API.get('/backups');
@@ -28,7 +24,11 @@ const BackupRestore = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchBackups();
+  }, [fetchBackups]);
 
   const handleCreateBackup = async () => {
     try {

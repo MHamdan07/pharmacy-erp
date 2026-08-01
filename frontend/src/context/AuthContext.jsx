@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import { createContext, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import API from '../api/axios';
@@ -39,7 +40,7 @@ export const AuthProvider = ({ children }) => {
           setUser(fetchedUser);
           await fetchBranches(fetchedUser);
         }
-      } catch (err) {
+      } catch {
         localStorage.removeItem('accessToken');
         localStorage.removeItem('activeBranchId');
         setUser(null);

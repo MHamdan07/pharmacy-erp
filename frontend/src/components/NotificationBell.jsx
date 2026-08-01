@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import API from '../api/axios';
 import {
   Bell, AlertTriangle, Clock, ShoppingCart, Truck, Database, ShieldAlert,
-  KeyRound, Check, X
+  KeyRound, Check
 } from 'lucide-react';
 
 const NotificationBell = () => {
@@ -10,13 +10,7 @@ const NotificationBell = () => {
   const [unreadCount, setUnreadCount] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
 
-  useEffect(() => {
-    fetchNotifications();
-    const interval = setInterval(fetchNotifications, 30000); // Auto refresh every 30s
-    return () => clearInterval(interval);
-  }, []);
-
-  const fetchNotifications = async () => {
+  const fetchNotifications = useCallback(async () => {
     try {
       const res = await API.get('/notifications');
       setNotifications(res.data.notifications || []);
@@ -24,7 +18,13 @@ const NotificationBell = () => {
     } catch (err) {
       console.error('Failed to fetch notifications:', err);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchNotifications();
+    const interval = setInterval(fetchNotifications, 30000); // Auto refresh every 30s
+    return () => clearInterval(interval);
+  }, [fetchNotifications]);
 
   const handleMarkAllRead = async () => {
     try {

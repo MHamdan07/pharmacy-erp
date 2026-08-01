@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import API from '../api/axios';
 import { Link } from 'react-router-dom';
@@ -22,11 +22,7 @@ const Dashboard = () => {
 
   const activeBranch = branches.find(b => b._id === activeBranchId) || user?.branch;
 
-  useEffect(() => {
-    fetchDashboardData();
-  }, [activeBranchId]);
-
-  const fetchDashboardData = async () => {
+  const fetchDashboardData = useCallback(async () => {
     try {
       setLoading(true);
       const res = await API.get('/reports/dashboard-metrics');
@@ -36,7 +32,11 @@ const Dashboard = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, [activeBranchId, fetchDashboardData]);
 
   if (loading) {
     return (

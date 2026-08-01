@@ -19,16 +19,9 @@ const Login = () => {
     setLoading(true);
 
     try {
-      if (requires2FA) {
-        // Complete 2FA Login
-        await login(email, password, twoFactorCode);
-      } else {
-        const response = await API.post('/auth/login', { email, password });
-        if (response.status === 202 && response.data.status === '2fa_required') {
-          setRequires2FA(true);
-        } else {
-          await login(email, password);
-        }
+      const res = await login(email, password, requires2FA ? twoFactorCode : undefined);
+      if (res?.status === '2fa_required') {
+        setRequires2FA(true);
       }
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to login. Please check credentials.');

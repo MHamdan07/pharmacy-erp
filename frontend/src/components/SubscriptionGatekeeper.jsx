@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
 import API from '../api/axios';
 import ReactivateSubscriptionModal from './ReactivateSubscriptionModal';
 import {
-  ShieldAlert, RefreshCw, Lock, Sparkles, Mail, AlertTriangle, CheckCircle2, Clock, FileText, CreditCard
+  ShieldAlert, RefreshCw, Lock, Sparkles, AlertTriangle
 } from 'lucide-react';
 
 const SubscriptionGatekeeper = () => {
@@ -12,11 +12,7 @@ const SubscriptionGatekeeper = () => {
   const [showReactivateModal, setShowReactivateModal] = useState(false);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    fetchSubscriptionGate();
-  }, []);
-
-  const fetchSubscriptionGate = async () => {
+  const fetchSubscriptionGate = useCallback(async () => {
     try {
       setLoading(true);
       const res = await API.get('/subscriptions/my-subscription');
@@ -26,7 +22,11 @@ const SubscriptionGatekeeper = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchSubscriptionGate();
+  }, [fetchSubscriptionGate]);
 
   const handleReactivateConfirm = async () => {
     try {

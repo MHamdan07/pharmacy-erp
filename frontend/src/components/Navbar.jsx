@@ -6,7 +6,7 @@ import NotificationBell from './NotificationBell';
 
 const Navbar = () => {
   const { user, branches, activeBranchId, switchBranch, logout } = useAuth();
-  const { themeMode, toggleTheme, accentColor, changeAccent } = useTheme();
+  const { themeMode, toggleTheme, changeAccent } = useTheme();
   const [showColorPicker, setShowColorPicker] = useState(false);
 
   const currentPharmacyName = user?.pharmacy?.name || 'Pharmacy ERP';

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import API from '../api/axios';
 import {
   Clock, ShieldAlert, Mail, MessageSquare, Lock, AlertTriangle,
@@ -11,11 +11,7 @@ const ExpiryManagement = () => {
   const [activeThreshold, setActiveThreshold] = useState('expired');
   const [actionLoading, setActionLoading] = useState(false);
 
-  useEffect(() => {
-    fetchExpiryData();
-  }, []);
-
-  const fetchExpiryData = async () => {
+  const fetchExpiryData = useCallback(async () => {
     try {
       setLoading(true);
       const res = await API.get('/expiry/analytics');
@@ -25,7 +21,11 @@ const ExpiryManagement = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchExpiryData();
+  }, [fetchExpiryData]);
 
   const handleTriggerAlert = async (alertType) => {
     try {

@@ -1,10 +1,8 @@
-import { useState, useEffect } from 'react';
-import { useAuth } from '../context/AuthContext';
+import { useState, useEffect, useCallback } from 'react';
 import API from '../api/axios';
 import { Building2, UserPlus, Shield, Store, Plus, Check, Edit, Trash2 } from 'lucide-react';
 
 const BranchUserManagement = () => {
-  const { user, branches: initialBranches } = useAuth();
   const [branches, setBranches] = useState([]);
   const [users, setUsers] = useState([]);
   const [showBranchModal, setShowBranchModal] = useState(false);
@@ -53,28 +51,28 @@ const BranchUserManagement = () => {
     branchId: ''
   });
 
-  useEffect(() => {
-    fetchBranches();
-    fetchUsers();
-  }, []);
-
-  const fetchBranches = async () => {
+  const fetchBranches = useCallback(async () => {
     try {
       const res = await API.get('/tenants/branches');
       setBranches(res.data || []);
     } catch (err) {
       console.error('Failed to fetch branches:', err);
     }
-  };
+  }, []);
 
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     try {
       const res = await API.get('/auth/users');
       setUsers(res.data || []);
     } catch (err) {
       console.error('Failed to fetch users:', err);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchBranches();
+    fetchUsers();
+  }, [fetchBranches, fetchUsers]);
 
   const handleCreateBranch = async (e) => {
     e.preventDefault();

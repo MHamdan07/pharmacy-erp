@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import API from '../api/axios';
 import {
@@ -74,11 +74,7 @@ const Inventory = () => {
     supplierId: ''
   });
 
-  useEffect(() => {
-    fetchData();
-  }, [activeBranchId, activeTab]);
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       if (activeTab === 'medicines') {
         const res = await API.get('/inventory/medicines');
@@ -95,7 +91,11 @@ const Inventory = () => {
     } catch (err) {
       console.error('Failed to load inventory data:', err);
     }
-  };
+  }, [activeTab]);
+
+  useEffect(() => {
+    fetchData();
+  }, [activeBranchId, activeTab, fetchData]);
 
   // Medicine Save / Edit Handler
   const handleSaveMedicine = async (e) => {

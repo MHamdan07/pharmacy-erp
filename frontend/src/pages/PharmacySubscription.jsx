@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import API from '../api/axios';
 import CancelSubscriptionModal from '../components/CancelSubscriptionModal';
 import ReactivateSubscriptionModal from '../components/ReactivateSubscriptionModal';
@@ -14,11 +14,7 @@ const PharmacySubscription = () => {
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [showReactivateModal, setShowReactivateModal] = useState(false);
 
-  useEffect(() => {
-    fetchMySubscription();
-  }, []);
-
-  const fetchMySubscription = async () => {
+  const fetchMySubscription = useCallback(async () => {
     try {
       setLoading(true);
       const res = await API.get('/subscriptions/my-subscription');
@@ -28,7 +24,11 @@ const PharmacySubscription = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchMySubscription();
+  }, [fetchMySubscription]);
 
   const handleRequestUpgrade = async (planName) => {
     try {
@@ -63,7 +63,6 @@ const PharmacySubscription = () => {
   };
 
   const sub = subData?.subscription || {};
-  const flags = subData?.featureFlags || {};
   const limits = subData?.usageLimits || {};
   const stats = subData?.usageStats || {};
   const remainingDays = subData?.remainingDays ?? 30;

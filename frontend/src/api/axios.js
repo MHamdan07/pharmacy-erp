@@ -1,10 +1,6 @@
 import axios from 'axios';
 
-const defaultApiUrl =
-  import.meta.env.VITE_API_URL ||
-  (typeof window !== 'undefined' && window.location.hostname.includes('pharmacy-erp-frontend-')
-    ? 'https://pharmacy-erp-zeta.vercel.app/api/v1'
-    : '/api/v1');
+const defaultApiUrl = import.meta.env.VITE_API_URL || '/api/v1';
 
 const API = axios.create({
   baseURL: defaultApiUrl,
@@ -32,16 +28,42 @@ API.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Response Interceptor to gracefully handle expired JWT sessions
+// Response Interceptor to gracefully handle expired JWT sessions with automatic refresh token retry
 API.interceptors.response.use(
   (response) => response,
-  (error) => {
+  async (error) => {
+    const originalRequest = error.config;
+
+    if (
+      error.response &&
+      error.response.status === 401 &&
+      originalRequest &&
+      !originalRequest._retry &&
+      !originalRequest.url?.includes('/auth/login') &&
+      !originalRequest.url?.includes('/auth/refresh')
+    ) {
+      originalRequest._retry = true;
+      try {
+        const refreshResponse = await API.post('/auth/refresh');
+        if (refreshResponse.data && refreshResponse.data.accessToken) {
+          const newToken = refreshResponse.data.accessToken;
+          localStorage.setItem('accessToken', newToken);
+          originalRequest.headers.Authorization = `Bearer ${newToken}`;
+          return API(originalRequest);
+        }
+      } catch (refreshError) {
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('activeBranchId');
+        if (!window.location.pathname.includes('/login')) {
+          window.location.href = '/login';
+        }
+        return Promise.reject(refreshError);
+      }
+    }
+
     if (error.response && error.response.status === 401) {
-      // Session expired or token invalid
       localStorage.removeItem('accessToken');
       localStorage.removeItem('activeBranchId');
-      
-      // Redirect to login if not already on public auth page
       if (!window.location.pathname.includes('/login')) {
         window.location.href = '/login';
       }

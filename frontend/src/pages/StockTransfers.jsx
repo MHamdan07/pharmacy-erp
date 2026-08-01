@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import API from '../api/axios';
-import { ArrowLeftRight, Plus, CheckCircle, Clock, Send, AlertCircle } from 'lucide-react';
+import { ArrowLeftRight, Plus } from 'lucide-react';
 
 const StockTransfers = () => {
   const { branches, activeBranchId } = useAuth();
@@ -13,18 +13,18 @@ const StockTransfers = () => {
   const [quantity, setQuantity] = useState(10);
   const [notes, setNotes] = useState('');
 
-  useEffect(() => {
-    fetchTransfers();
-  }, [activeBranchId]);
-
-  const fetchTransfers = async () => {
+  const fetchTransfers = useCallback(async () => {
     try {
       const res = await API.get('/transfers/transfers');
       setTransfers(res.data || []);
     } catch (err) {
       console.error('Failed to load transfers:', err);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchTransfers();
+  }, [activeBranchId, fetchTransfers]);
 
   const handleCreateTransfer = async (e) => {
     e.preventDefault();
@@ -179,6 +179,17 @@ const StockTransfers = () => {
                   min="1"
                   value={quantity}
                   onChange={(e) => setQuantity(e.target.value)}
+                  className="w-full bg-slate-800 border border-slate-700 rounded p-2 text-white"
+                />
+              </div>
+
+              <div>
+                <label className="text-slate-400">Notes (Optional)</label>
+                <input
+                  type="text"
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  placeholder="Reason for transfer"
                   className="w-full bg-slate-800 border border-slate-700 rounded p-2 text-white"
                 />
               </div>

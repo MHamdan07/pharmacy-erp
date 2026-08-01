@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import {
-  ShieldCheck, AlertTriangle, Lock, Database, WifiOff, FileCheck,
-  CheckCircle2, Layers, RefreshCw, Activity, UserCheck, Shield, Sparkles
+  ShieldCheck, AlertTriangle, CheckCircle2
 } from 'lucide-react';
 
 const RiskProtectionMatrix = () => {

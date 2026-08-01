@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import API from '../api/axios';
 import {
@@ -18,12 +18,11 @@ const POSBilling = () => {
   const [patientPhone, setPatientPhone] = useState('');
   const [doctorName, setDoctorName] = useState('');
   const [prescriptionNumber, setPrescriptionNumber] = useState('');
-  const [prescriptionUrl, setPrescriptionUrl] = useState('');
+  const [prescriptionUrl] = useState('');
 
   // Discount, Tax & Loyalty Points
   const [discountAmount, setDiscountAmount] = useState(0);
-  const [taxAmount, setTaxAmount] = useState(0);
-  const [redeemLoyalty, setRedeemLoyalty] = useState(false);
+  const [redeemLoyalty] = useState(false);
 
   // Payment Method: 'cash', 'card', 'bank_transfer', 'jazzcash', 'easypaisa', 'credit_account'
   const [paymentMethod, setPaymentMethod] = useState('cash');
@@ -34,18 +33,18 @@ const POSBilling = () => {
 
   const activeBranch = branches.find(b => b._id === activeBranchId) || user?.branch;
 
-  useEffect(() => {
-    fetchMedicines();
-  }, [activeBranchId]);
-
-  const fetchMedicines = async () => {
+  const fetchMedicines = useCallback(async () => {
     try {
       const res = await API.get('/inventory/medicines');
       setMedicines(res.data || []);
     } catch (err) {
       console.error('Failed to load inventory for POS:', err);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchMedicines();
+  }, [activeBranchId, fetchMedicines]);
 
   const addToCart = (med) => {
     if (med.stockQty <= 0) return;

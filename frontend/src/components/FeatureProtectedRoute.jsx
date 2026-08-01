@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { Navigate, Outlet } from 'react-router-dom';
+import { useState, useEffect, useCallback } from 'react';
+import { Outlet } from 'react-router-dom';
 import API from '../api/axios';
 import UpgradeModal from './UpgradeModal';
 
@@ -8,11 +8,7 @@ const FeatureProtectedRoute = ({ flagName, requiredPlan = 'Professional' }) => {
   const [currentPlan, setCurrentPlan] = useState('Professional');
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchSubscriptionFlags();
-  }, []);
-
-  const fetchSubscriptionFlags = async () => {
+  const fetchSubscriptionFlags = useCallback(async () => {
     try {
       const res = await API.get('/subscriptions/my-subscription');
       if (res.data) {
@@ -24,7 +20,11 @@ const FeatureProtectedRoute = ({ flagName, requiredPlan = 'Professional' }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchSubscriptionFlags();
+  }, [fetchSubscriptionFlags]);
 
   if (loading) {
     return (

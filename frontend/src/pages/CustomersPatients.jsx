@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import API from '../api/axios';
 import { Users, Plus, Phone, Award, FileText } from 'lucide-react';
 
@@ -13,18 +13,18 @@ const CustomersPatients = () => {
     gender: 'unspecified'
   });
 
-  useEffect(() => {
-    fetchCustomers();
-  }, []);
-
-  const fetchCustomers = async () => {
+  const fetchCustomers = useCallback(async () => {
     try {
       const res = await API.get('/customers/customers');
       setCustomers(res.data || []);
     } catch (err) {
       console.error('Failed to load customers:', err);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchCustomers();
+  }, [fetchCustomers]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

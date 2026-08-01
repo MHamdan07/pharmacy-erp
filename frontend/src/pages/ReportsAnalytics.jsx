@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import API from '../api/axios';
 import {
   BarChart3, FileSpreadsheet, FileText, Download, Calendar, DollarSign,
-  TrendingUp, Users, Truck, Package, Clock, Building2, Activity, Filter, CheckCircle, Search
+  TrendingUp, Users, Truck, Package, Clock, Building2, Activity, CheckCircle, Search
 } from 'lucide-react';
 
 const ReportsAnalytics = () => {
@@ -14,11 +14,7 @@ const ReportsAnalytics = () => {
   const [reportData, setReportData] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchReportData();
-  }, [selectedReport, dateRange]);
-
-  const fetchReportData = async () => {
+  const fetchReportData = useCallback(async () => {
     try {
       setLoading(true);
       const res = await API.get('/reports/dashboard-metrics');
@@ -28,7 +24,11 @@ const ReportsAnalytics = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchReportData();
+  }, [selectedReport, dateRange, fetchReportData]);
 
   // CSV Export Generator
   const exportToCsv = () => {

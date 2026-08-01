@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { NavLink } from 'react-router-dom';
 import API from '../api/axios';
 import {
@@ -22,11 +22,7 @@ const Sidebar = () => {
   const [featureFlags, setFeatureFlags] = useState(null);
   const [currentPlan, setCurrentPlan] = useState('Professional');
 
-  useEffect(() => {
-    fetchFlags();
-  }, []);
-
-  const fetchFlags = async () => {
+  const fetchFlags = useCallback(async () => {
     try {
       const res = await API.get('/subscriptions/my-subscription');
       if (res.data) {
@@ -36,7 +32,11 @@ const Sidebar = () => {
     } catch (err) {
       console.error('Failed to load feature flags:', err);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchFlags();
+  }, [fetchFlags]);
 
   const allNavItems = [
     { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },

@@ -8,7 +8,10 @@
     "frontend"
   ],
   "scripts": {
-    "build": "turbo run build"
+    "build": "turbo run build",
+    "dev": "concurrently \"npm --prefix backend run dev\" \"npm --prefix frontend run dev\"",
+    "lint": "npm --prefix frontend run lint",
+    "test": "npm --prefix backend test"
   },
   "devDependencies": {
     "concurrently": "^8.0.0",
