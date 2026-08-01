@@ -671,7 +671,18 @@ const Inventory = () => {
                     className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white"
                   >
                     <option value="">Select Category</option>
-                    {categories.map(c => <option key={c._id} value={c._id}>{c.name}</option>)}
+                    {(categories.length > 0 ? categories : [
+                      { _id: 'Tablets', name: 'Tablets' },
+                      { _id: 'Capsules', name: 'Capsules' },
+                      { _id: 'Syrups', name: 'Syrups' },
+                      { _id: 'Injections', name: 'Injections' },
+                      { _id: 'Eye Drops', name: 'Eye Drops' },
+                      { _id: 'Vitamins & Supplements', name: 'Vitamins & Supplements' },
+                      { _id: 'Creams & Ointments', name: 'Creams & Ointments' },
+                      { _id: 'Surgical & First Aid', name: 'Surgical & First Aid' }
+                    ]).map(c => (
+                      <option key={c._id || c.id || c.name} value={c._id || c.id || c.name}>{c.name}</option>
+                    ))}
                   </select>
                 </div>
                 <div>
@@ -682,7 +693,13 @@ const Inventory = () => {
                     className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white"
                   >
                     <option value="">Select Supplier</option>
-                    {suppliers.map(s => <option key={s._id} value={s._id}>{s.name}</option>)}
+                    {(suppliers.length > 0 ? suppliers : [
+                      { _id: 'Global Pharma Corp', company: 'Global Pharma Corp', name: 'Global Pharma Corp' },
+                      { _id: 'MedCare Wholesalers', company: 'MedCare Wholesalers', name: 'MedCare Wholesalers' },
+                      { _id: 'Sun Pharma Distribution', company: 'Sun Pharma Distribution', name: 'Sun Pharma Distribution' }
+                    ]).map(s => (
+                      <option key={s._id || s.id || s.name} value={s._id || s.id || s.name}>{s.company || s.name}</option>
+                    ))}
                   </select>
                 </div>
               </div>

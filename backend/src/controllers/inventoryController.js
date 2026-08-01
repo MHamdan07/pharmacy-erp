@@ -7,7 +7,17 @@ import AuditLog from '../models/AuditLog.js';
 // --- Categories ---
 export const getCategories = async (req, res) => {
   try {
-    const categories = await Category.find({ pharmacy: req.pharmacyId }).sort({ name: 1 });
+    let categories = await Category.find({ pharmacy: req.pharmacyId }).sort({ name: 1 });
+    if (!categories || categories.length === 0) {
+      const defaultCatNames = [
+        'Tablets', 'Capsules', 'Syrups', 'Injections', 'Eye Drops',
+        'Vitamins & Supplements', 'Creams & Ointments', 'Surgical & First Aid',
+        'Baby Care', 'Medical Devices', 'General Health'
+      ];
+      categories = await Promise.all(
+        defaultCatNames.map(name => Category.create({ name, pharmacy: req.pharmacyId }))
+      );
+    }
     res.json(categories);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -29,7 +39,17 @@ export const createCategory = async (req, res) => {
 // --- Suppliers ---
 export const getSuppliers = async (req, res) => {
   try {
-    const suppliers = await Supplier.find({ pharmacy: req.pharmacyId }).sort({ name: 1 });
+    let suppliers = await Supplier.find({ pharmacy: req.pharmacyId }).sort({ name: 1 });
+    if (!suppliers || suppliers.length === 0) {
+      const defaultSuppliers = [
+        { company: 'Global Pharma Corp', name: 'Alex Rivera', email: 'orders@pharmacorp.com', phone: '+1 800 555 0190' },
+        { company: 'MedCare Wholesalers', name: 'Distribution Dept', email: 'supply@medcare.com', phone: '+1 800 555 0191' },
+        { company: 'Sun Pharma Distribution', name: 'Regional Agent', email: 'contact@sunpharma.com', phone: '+1 800 555 0192' }
+      ];
+      suppliers = await Promise.all(
+        defaultSuppliers.map(s => Supplier.create({ ...s, pharmacy: req.pharmacyId }))
+      );
+    }
     res.json(suppliers);
   } catch (error) {
     res.status(500).json({ message: error.message });
