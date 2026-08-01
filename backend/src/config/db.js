@@ -6,16 +6,10 @@ const connectDB = async () => {
   }
 
   const primaryUri = process.env.MONGO_URI;
+  const defaultAtlasUri = 'mongodb+srv://entermh07_db_user:password12345@cluster0.0g9n9mz.mongodb.net/pharmacy_erp?retryWrites=true&w=majority&appName=Cluster0';
   const fallbackUri = 'mongodb://127.0.0.1:27017/pharmacy_erp';
-  const isProduction = process.env.VERCEL || process.env.NODE_ENV === 'production';
 
-  const uriToUse = primaryUri || (!isProduction ? fallbackUri : null);
-
-  if (!uriToUse) {
-    const errorMsg = '❌ MONGO_URI is missing. Please set MONGO_URI in your Vercel Environment Variables with your MongoDB Atlas connection string.';
-    console.error(errorMsg);
-    throw new Error(errorMsg);
-  }
+  const uriToUse = primaryUri || defaultAtlasUri || fallbackUri;
 
   try {
     const conn = await mongoose.connect(uriToUse, {
