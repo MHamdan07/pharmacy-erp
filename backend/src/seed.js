@@ -11,6 +11,7 @@ import Customer from './models/Customer.js';
 import Sale from './models/Sale.js';
 import connectDB from './config/db.js';
 
+dotenv.config({ path: './backend/.env' });
 dotenv.config();
 
 const seedDatabase = async () => {
@@ -98,6 +99,17 @@ const seedDatabase = async () => {
       branch: branch1_1._id,
       assignedBranches: [branch1_1._id, branch1_2._id],
       phone: '+1 555 0111'
+    });
+
+    const owner2 = await User.create({
+      name: 'Dr. Arthur Pendelton',
+      email: 'owner@healthcare.com',
+      password: 'password123',
+      role: 'Owner',
+      pharmacy: pharmacy1._id,
+      branch: branch1_1._id,
+      assignedBranches: [branch1_1._id, branch1_2._id],
+      phone: '+1 555 0119'
     });
 
     const pharmacist1 = await User.create({
