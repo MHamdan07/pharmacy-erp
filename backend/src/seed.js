@@ -93,7 +93,7 @@ const seedDatabase = async () => {
     const owner1 = await User.create({
       name: 'Sarah Jenkins',
       email: 'owner@hcplus.com',
-      password: 'password123',
+      password: 'PharmERP@2026!',
       role: 'Owner',
       pharmacy: pharmacy1._id,
       branch: branch1_1._id,
@@ -104,7 +104,7 @@ const seedDatabase = async () => {
     const owner2 = await User.create({
       name: 'Dr. Arthur Pendelton',
       email: 'owner@healthcare.com',
-      password: 'password123',
+      password: 'PharmERP@2026!',
       role: 'Owner',
       pharmacy: pharmacy1._id,
       branch: branch1_1._id,
@@ -115,7 +115,7 @@ const seedDatabase = async () => {
     const pharmacist1 = await User.create({
       name: 'Dr. Michael Chang',
       email: 'pharmacist@hcplus.com',
-      password: 'password123',
+      password: 'PharmERP@2026!',
       role: 'Pharmacist',
       pharmacy: pharmacy1._id,
       branch: branch1_1._id,
