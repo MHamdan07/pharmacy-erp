@@ -11,7 +11,7 @@ const globalForPrisma = global;
 export const prisma =
   globalForPrisma.prisma ||
   new PrismaClient({
-    ...(connectionString ? { datasourceUrl: connectionString } : {}),
+    ...(connectionString ? { datasources: { db: { url: connectionString } } } : {}),
     log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
   });
 
