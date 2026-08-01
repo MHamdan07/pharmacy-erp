@@ -377,7 +377,8 @@ export const refreshToken = async (req, res) => {
       return res.status(401).json({ message: 'Refresh token not found' });
     }
 
-    const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
+    const refreshSecret = process.env.JWT_REFRESH_SECRET || 'super_secret_pharmacy_erp_refresh_key_2026';
+    const decoded = jwt.verify(refreshToken, refreshSecret);
     const user = await User.findById(decoded.id)
       .select('-password')
       .populate('pharmacy')
