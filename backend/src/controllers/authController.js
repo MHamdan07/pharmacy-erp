@@ -60,10 +60,21 @@ export const login = async (req, res) => {
     // 2. Check Password
     const isMatch = await user.matchPassword(password);
     if (!isMatch) {
-      user.failedLoginAttempts += 1;
-      if (user.failedLoginAttempts >= 5) {
-        user.lockUntil = new Date(Date.now() + 15 * 60 * 1000); // Lock for 15 mins
-        await user.save();
+      const attempts = (user.failedLoginAttempts || 0) + 1;
+      const isLocked = attempts >= 5;
+      const lockTime = isLocked ? new Date(Date.now() + 15 * 60 * 1000) : null;
+
+      await User.updateOne(
+        { _id: user._id },
+        {
+          $set: {
+            failedLoginAttempts: attempts,
+            lockUntil: lockTime
+          }
+        }
+      );
+
+      if (isLocked) {
         await AuditLog.create({
           pharmacy: user.pharmacy?._id,
           branch: user.branch?._id,
@@ -75,14 +86,14 @@ export const login = async (req, res) => {
         });
         return res.status(423).json({ message: 'Too many failed login attempts. Account locked for 15 minutes.' });
       }
-      await user.save();
-      return res.status(401).json({ message: `Invalid credentials. ${5 - user.failedLoginAttempts} attempts remaining.` });
+      return res.status(401).json({ message: `Invalid credentials. ${5 - attempts} attempts remaining.` });
     }
 
-    // 3. Reset failed attempts on success
-    user.failedLoginAttempts = 0;
-    user.lockUntil = null;
-    await user.save();
+    // 3. Reset failed attempts on success atomically
+    await User.updateOne(
+      { _id: user._id },
+      { $set: { failedLoginAttempts: 0, lockUntil: null } }
+    );
 
     // 4. Two-Factor Authentication Check
     if (user.twoFactorEnabled) {

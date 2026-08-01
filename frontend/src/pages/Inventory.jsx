@@ -672,14 +672,22 @@ const Inventory = () => {
                   >
                     <option value="">Select Category</option>
                     {(categories.length > 0 ? categories : [
-                      { _id: 'Tablets', name: 'Tablets' },
-                      { _id: 'Capsules', name: 'Capsules' },
-                      { _id: 'Syrups', name: 'Syrups' },
-                      { _id: 'Injections', name: 'Injections' },
-                      { _id: 'Eye Drops', name: 'Eye Drops' },
-                      { _id: 'Vitamins & Supplements', name: 'Vitamins & Supplements' },
-                      { _id: 'Creams & Ointments', name: 'Creams & Ointments' },
-                      { _id: 'Surgical & First Aid', name: 'Surgical & First Aid' }
+                      { _id: 'Tablets & Oral Solid Dosage', name: 'Tablets & Oral Solid Dosage' },
+                      { _id: 'Capsules & Softgels', name: 'Capsules & Softgels' },
+                      { _id: 'Syrups, Liquids & Suspensions', name: 'Syrups, Liquids & Suspensions' },
+                      { _id: 'Injections, IV Solutions & Ampoules', name: 'Injections, IV Solutions & Ampoules' },
+                      { _id: 'Eye, Ear & Nasal Drops', name: 'Eye, Ear & Nasal Drops' },
+                      { _id: 'Creams, Ointments & Topical Gels', name: 'Creams, Ointments & Topical Gels' },
+                      { _id: 'Antibiotics & Anti-Infectives', name: 'Antibiotics & Anti-Infectives' },
+                      { _id: 'Cardiovascular & Anti-Hypertensive', name: 'Cardiovascular & Anti-Hypertensive' },
+                      { _id: 'Diabetes & Endocrine Care', name: 'Diabetes & Endocrine Care' },
+                      { _id: 'Pain Relief & Anti-Inflammatory', name: 'Pain Relief & Anti-Inflammatory' },
+                      { _id: 'Vitamins, Minerals & Health Supplements', name: 'Vitamins, Minerals & Health Supplements' },
+                      { _id: 'Pediatric & Baby Healthcare', name: 'Pediatric & Baby Healthcare' },
+                      { _id: 'Surgical Items & First Aid Dressings', name: 'Surgical Items & First Aid Dressings' },
+                      { _id: 'Medical Devices, Meters & Equipment', name: 'Medical Devices, Meters & Equipment' },
+                      { _id: 'Respiratory & Asthma Inhalers', name: 'Respiratory & Asthma Inhalers' },
+                      { _id: 'Personal Hygiene & Dermatology', name: 'Personal Hygiene & Dermatology' }
                     ]).map(c => (
                       <option key={c._id || c.id || c.name} value={c._id || c.id || c.name}>{c.name}</option>
                     ))}

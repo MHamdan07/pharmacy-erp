@@ -10,9 +10,22 @@ export const getCategories = async (req, res) => {
     let categories = await Category.find({ pharmacy: req.pharmacyId }).sort({ name: 1 });
     if (!categories || categories.length === 0) {
       const defaultCatNames = [
-        'Tablets', 'Capsules', 'Syrups', 'Injections', 'Eye Drops',
-        'Vitamins & Supplements', 'Creams & Ointments', 'Surgical & First Aid',
-        'Baby Care', 'Medical Devices', 'General Health'
+        'Tablets & Oral Solid Dosage',
+        'Capsules & Softgels',
+        'Syrups, Liquids & Suspensions',
+        'Injections, IV Solutions & Ampoules',
+        'Eye, Ear & Nasal Drops',
+        'Creams, Ointments & Topical Gels',
+        'Antibiotics & Anti-Infectives',
+        'Cardiovascular & Anti-Hypertensive',
+        'Diabetes & Endocrine Care',
+        'Pain Relief & Anti-Inflammatory',
+        'Vitamins, Minerals & Health Supplements',
+        'Pediatric & Baby Healthcare',
+        'Surgical Items & First Aid Dressings',
+        'Medical Devices, Meters & Equipment',
+        'Respiratory & Asthma Inhalers',
+        'Personal Hygiene & Dermatology'
       ];
       categories = await Promise.all(
         defaultCatNames.map(name => Category.create({ name, pharmacy: req.pharmacyId }))
