@@ -6,21 +6,17 @@ const connectDB = async () => {
   }
 
   const primaryUri = process.env.MONGO_URI;
-  const defaultAtlasUri = 'mongodb+srv://entermh07_db_user:password12345@cluster0.0g9n9mz.mongodb.net/pharmacy_erp?retryWrites=true&w=majority&appName=Cluster0';
+  // Direct seedlist URI to avoid Vercel AWS Lambda SRV DNS lookup timeouts
+  const defaultAtlasUri = 'mongodb://entermh07_db_user:password12345@ac-yl21gbg-shard-00-00.0g9n9mz.mongodb.net:27017,ac-yl21gbg-shard-00-01.0g9n9mz.mongodb.net:27017,ac-yl21gbg-shard-00-02.0g9n9mz.mongodb.net:27017/pharmacy_erp?ssl=true&replicaSet=atlas-13c59o-shard-0&authSource=admin&retryWrites=true&w=majority';
   const fallbackUri = 'mongodb://127.0.0.1:27017/pharmacy_erp';
 
   const uriToUse = primaryUri || defaultAtlasUri || fallbackUri;
 
-  const isSrv = uriToUse.startsWith('mongodb+srv://');
   const options = {
-    serverSelectionTimeoutMS: 3000,
-    connectTimeoutMS: 3000
+    serverSelectionTimeoutMS: 5000,
+    connectTimeoutMS: 5000,
+    family: 4
   };
-
-  // Only pass family: 4 for non-SRV URIs to prevent MongoParseError on Vercel
-  if (!isSrv) {
-    options.family = 4;
-  }
 
   try {
     const conn = await mongoose.connect(uriToUse, options);
