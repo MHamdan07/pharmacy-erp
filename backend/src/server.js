@@ -82,6 +82,7 @@ apiRouter.use('/', reorderDuplicateRoutes);
 
 app.use('/api/v1', apiRouter);
 app.use('/v1', apiRouter);
+app.use('/', apiRouter);
 
 // Healthcheck Route
 app.get('/', (req, res) => {
@@ -90,6 +91,14 @@ app.get('/', (req, res) => {
     message: 'Multi-Tenant Enterprise Pharmacy ERP API is active',
     security: 'JWT + HttpOnly Cookies + Rate Limiting + Account Lockout + 2FA + RBAC Active',
     version: '2.0.0'
+  });
+});
+
+// 404 Fallback Handler for Serverless Invocation Safety
+app.use((req, res) => {
+  res.status(404).json({
+    status: 'fail',
+    message: `Route ${req.originalUrl || req.url} not found on Pharmacy ERP API`
   });
 });
 
