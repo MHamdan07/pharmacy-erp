@@ -19,7 +19,7 @@ const connectDB = async () => {
     console.log(`🍃 MongoDB Connected: ${conn.connection.host}`);
   } catch (error) {
     console.error(`❌ MongoDB Connection Error: ${error.message}`);
-    if (!isProduction && primaryUri) {
+    if (process.env.NODE_ENV !== 'production' && primaryUri) {
       console.log('🔄 Attempting fallback connection to local MongoDB (127.0.0.1:27017)...');
       try {
         const localConn = await mongoose.connect(fallbackUri, { family: 4 });
