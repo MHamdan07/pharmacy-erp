@@ -723,9 +723,22 @@ A task is complete only if:
 
 ✅ Tested
 
-✅ Reusable
-
 ✅ Clean architecture maintained
+
+---
+
+# Subagent Team Architecture
+
+The system is developed and maintained by 8 specialized AI subagents:
+
+1. **`pharmacy-erp-architect`**: Lead System Architect (Multi-tenancy, Mongoose schemas, SOLID clean architecture).
+2. **`pharmacy-erp-backend`**: Core API & Node/Express Engineer (REST endpoints, middleware, POS transactions, audit logs).
+3. **`pharmacy-erp-frontend`**: React 19 & Tailwind UI Engineer (POS interface, branch context, dark medical theme).
+4. **`pharmacy-erp-qa`**: Quality Assurance Specialist (Unit test suite, RBAC permission verification, seed data integrity).
+5. **`pharmacy-erp-ai-specialist`**: AI System Specialist (OCR prescription reading, drug interaction alerts, demand forecasting).
+6. **`pharmacy-erp-inventory-manager`**: Supply Chain Manager (FEFO batch tracking, barcode/QR, purchase orders, transfers).
+7. **`pharmacy-erp-security-compliance`**: Security Specialist (2FA, JWT HTTP-only cookies, audit logs, backup/restore routines).
+8. **`pharmacy-erp-ecommerce-customer`**: Customer Portal Specialist (Storefront, cart, checkout, local payment gateways).
 
 ---
 
