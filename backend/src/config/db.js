@@ -11,24 +11,21 @@ const connectDB = async () => {
 
   const uriToUse = primaryUri || defaultAtlasUri || fallbackUri;
 
+  const isSrv = uriToUse.startsWith('mongodb+srv://');
+  const options = {
+    serverSelectionTimeoutMS: 15000
+  };
+
+  // Only pass family: 4 for non-SRV URIs to prevent MongoParseError on Vercel
+  if (!isSrv) {
+    options.family = 4;
+  }
+
   try {
-    const conn = await mongoose.connect(uriToUse, {
-      serverSelectionTimeoutMS: 15000,
-      family: 4 // Use IPv4 to avoid ETIMEOUT on SRV DNS resolution
-    });
+    const conn = await mongoose.connect(uriToUse, options);
     console.log(`🍃 MongoDB Connected: ${conn.connection.host}`);
   } catch (error) {
     console.error(`❌ MongoDB Connection Error: ${error.message}`);
-    if (process.env.NODE_ENV !== 'production' && primaryUri) {
-      console.log('🔄 Attempting fallback connection to local MongoDB (127.0.0.1:27017)...');
-      try {
-        const localConn = await mongoose.connect(fallbackUri, { family: 4 });
-        console.log(`🍃 Local MongoDB Connected: ${localConn.connection.host}`);
-        return;
-      } catch (localErr) {
-        console.error(`❌ Local MongoDB also unavailable: ${localErr.message}`);
-      }
-    }
     throw error;
   }
 };
