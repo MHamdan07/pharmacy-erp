@@ -27,14 +27,13 @@ dotenv.config();
 const app = express();
 
 // Ensure Database Connection on Request
-app.use(async (req, res, next) => {
-  try {
-    await connectDB();
-    next();
-  } catch (err) {
-    console.error('Database connection failure:', err.message);
-    res.status(500).json({ message: 'Database connection failed: ' + err.message });
-  }
+app.use((req, res, next) => {
+  connectDB()
+    .then(() => next())
+    .catch((err) => {
+      console.error('Database connection failure:', err.message);
+      res.status(500).json({ message: 'Database connection failure: ' + err.message });
+    });
 });
 const PORT = process.env.PORT || 5000;
 const allowedOrigins = (process.env.CLIENT_URLS || 'http://localhost:5173,http://127.0.0.1:5173')
