@@ -1,9 +1,13 @@
 import mongoose from 'mongoose';
 import dns from 'dns';
 
-// Ensure IPv4 DNS resolution for MongoDB Atlas SRV query resolution in Node 17+ and Serverless environments
-if (dns && typeof dns.setDefaultResultOrder === 'function') {
-  dns.setDefaultResultOrder('ipv4first');
+// Ensure IPv4 DNS resolution for MongoDB Atlas SRV query resolution
+try {
+  if (dns && typeof dns.setDefaultResultOrder === 'function') {
+    dns.setDefaultResultOrder('ipv4first');
+  }
+} catch {
+  // Ignore DNS order configuration error in serverless runtimes
 }
 
 let cachedPromise = null;
@@ -21,8 +25,7 @@ const connectDB = async () => {
     const uriToUse = primaryUri || defaultAtlasUri || fallbackUri;
 
     cachedPromise = mongoose.connect(uriToUse, {
-      serverSelectionTimeoutMS: 10000,
-      bufferCommands: false
+      serverSelectionTimeoutMS: 15000
     }).then(conn => {
       console.log(`🍃 MongoDB Connected: ${conn.connection.host}`);
       return conn;

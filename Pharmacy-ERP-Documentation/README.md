@@ -1,3 +1,34 @@
-# Pharmacy ERP Documentation
+# Pharmacy ERP Master Documentation Directory
 
-This documentation contains the architecture and modules for a SaaS Pharmacy ERP.
+Welcome to the official master documentation library for the **Pharmacy ERP & Inventory Management System**.
+
+## Table of Contents
+00. [Project Overview](./00_Project_Overview.md)
+01. [System Architecture](./01_System_Architecture.md)
+02. [Homepage & Landing Portal](./02_Homepage.md)
+03. [Customer Module & E-Storefront](./03_Customer_Module.md)
+04. [Prescription Module & AI OCR](./04_Prescription_Module.md)
+05. [Medicine Database](./05_Medicine_Database.md)
+06. [Inventory Management & FEFO](./06_Inventory_Management.md)
+07. [Pharmacist Module](./07_Pharmacist_Module.md)
+08. [Cashier Module & POS](./08_Cashier_Module.md)
+09. [Admin Module](./09_Admin_Module.md)
+10. [Company Management](./10_Company_Management.md)
+11. [Branch Management](./11_Branch_Management.md)
+12. [Subscription Plans](./12_Subscription_Plans.md)
+13. [Supplier Management](./13_Supplier_Management.md)
+14. [Sales Management](./14_Sales_Management.md)
+15. [Financial Reports](./15_Reports.md)
+16. [Notifications](./16_Notifications.md)
+17. [Security & Compliance](./17_Security.md)
+18. [User Roles & RBAC](./18_User_Roles.md)
+19. [Database Schema](./19_Database.md)
+20. [Mobile App & PWA](./20_Mobile_App.md)
+21. [AI Features](./21_AI_Features.md)
+22. [Technology Stack](./22_Technology_Stack.md)
+23. [Maintenance](./23_Maintenance.md)
+24. [Future Roadmap](./24_Future_Enhancements.md)
+25. [API Documentation](./25_API_Documentation.md)
+26. [UI/UX System](./26_UI_UX.md)
+27. [Project Roadmap](./27_Project_Roadmap.md)
+28. [Testing Suite](./28_Testing.md)
