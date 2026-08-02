@@ -82,7 +82,7 @@ apiRouter.use('/prescriptions', prescriptionRoutes);
 apiRouter.use('/ai', aiRoutes);
 apiRouter.use('/employees', employeeRoutes);
 apiRouter.use('/settings', settingsRoutes);
-apiRouter.use('/', reorderDuplicateRoutes);
+apiRouter.use('/reorder-duplicates', reorderDuplicateRoutes);
 
 app.use('/api/v1', apiRouter);
 app.use('/v1', apiRouter);
