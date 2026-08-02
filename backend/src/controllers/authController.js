@@ -36,10 +36,16 @@ export const DEFAULT_ROLE_PERMISSIONS = {
 
 // Login with Account Lockout & 2FA support
 export const login = async (req, res) => {
-  const { email, password, twoFactorCode } = req.body;
+  const { email, password, twoFactorCode } = req.body || {};
+
+  if (!email || !password) {
+    return res.status(400).json({ message: 'Email and password are required' });
+  }
+
+  const normalizedEmail = typeof email === 'string' ? email.toLowerCase().trim() : '';
 
   try {
-    const user = await User.findOne({ email: email.toLowerCase() })
+    const user = await User.findOne({ email: normalizedEmail })
       .select('+password')
       .populate('pharmacy')
       .populate('branch')

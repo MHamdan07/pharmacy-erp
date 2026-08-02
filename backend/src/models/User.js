@@ -49,7 +49,12 @@ userSchema.pre('save', async function (next) {
 
 // Compare Password Method
 userSchema.methods.matchPassword = async function (enteredPassword) {
-  return await bcrypt.compare(enteredPassword, this.password);
+  if (!enteredPassword || !this.password) return false;
+  try {
+    return await bcrypt.compare(enteredPassword, this.password);
+  } catch {
+    return false;
+  }
 };
 
 // Check if Account is Locked
