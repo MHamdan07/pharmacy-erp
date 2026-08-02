@@ -13,7 +13,7 @@ const connectDB = async () => {
 
   const isSrv = uriToUse.startsWith('mongodb+srv://');
   const options = {
-    serverSelectionTimeoutMS: 15000
+    serverSelectionTimeoutMS: 5000
   };
 
   // Only pass family: 4 for non-SRV URIs to prevent MongoParseError on Vercel
