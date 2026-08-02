@@ -6,26 +6,34 @@ if (dns && typeof dns.setDefaultResultOrder === 'function') {
   dns.setDefaultResultOrder('ipv4first');
 }
 
+let cachedPromise = null;
+
 const connectDB = async () => {
   if (mongoose.connection.readyState >= 1) {
-    return;
+    return mongoose.connection;
   }
 
-  const primaryUri = process.env.MONGO_URI;
-  const defaultAtlasUri = 'mongodb+srv://entermh07_db_user:password12345@cluster0.0g9n9mz.mongodb.net/pharmacy_erp?retryWrites=true&w=majority&appName=Cluster0';
-  const fallbackUri = 'mongodb://127.0.0.1:27017/pharmacy_erp';
+  if (!cachedPromise) {
+    const primaryUri = process.env.MONGO_URI;
+    const defaultAtlasUri = 'mongodb+srv://entermh07_db_user:password12345@cluster0.0g9n9mz.mongodb.net/pharmacy_erp?retryWrites=true&w=majority&appName=Cluster0';
+    const fallbackUri = 'mongodb://127.0.0.1:27017/pharmacy_erp';
 
-  const uriToUse = primaryUri || defaultAtlasUri || fallbackUri;
+    const uriToUse = primaryUri || defaultAtlasUri || fallbackUri;
 
-  try {
-    const conn = await mongoose.connect(uriToUse, {
-      serverSelectionTimeoutMS: 15000
+    cachedPromise = mongoose.connect(uriToUse, {
+      serverSelectionTimeoutMS: 10000,
+      bufferCommands: false
+    }).then(conn => {
+      console.log(`🍃 MongoDB Connected: ${conn.connection.host}`);
+      return conn;
+    }).catch(err => {
+      cachedPromise = null;
+      console.error(`❌ MongoDB Connection Error: ${err.message}`);
+      throw err;
     });
-    console.log(`🍃 MongoDB Connected: ${conn.connection.host}`);
-  } catch (error) {
-    console.error(`❌ MongoDB Connection Error: ${error.message}`);
-    throw error;
   }
+
+  return cachedPromise;
 };
 
 export default connectDB;
