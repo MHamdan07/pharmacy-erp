@@ -15,7 +15,9 @@ import {
   Database,
   ShieldCheck,
   Settings,
-  CreditCard
+  CreditCard,
+  FileText,
+  ShoppingBag
 } from 'lucide-react';
 
 const Sidebar = () => {
@@ -41,6 +43,8 @@ const Sidebar = () => {
   const allNavItems = [
     { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
     { label: 'POS Billing', path: '/pos', icon: ShoppingCart, highlight: true, flag: 'pos' },
+    { label: 'Prescription & AI OCR', path: '/prescriptions', icon: FileText, highlight: true },
+    { label: 'Customer E-Storefront', path: '/store', icon: ShoppingBag },
     { label: 'Inventory & Batches', path: '/inventory', icon: Pill, flag: 'inventory' },
     { label: 'Expiry & FEFO Control', path: '/expiry', icon: Clock, flag: 'expiry' },
     { label: 'Barcode & Shelf Labels', path: '/barcode-labels', icon: Barcode, flag: 'barcode' },

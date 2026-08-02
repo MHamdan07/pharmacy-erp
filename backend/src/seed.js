@@ -9,6 +9,7 @@ import Medicine from './models/Medicine.js';
 import Batch from './models/Batch.js';
 import Customer from './models/Customer.js';
 import Sale from './models/Sale.js';
+import Prescription from './models/Prescription.js';
 import connectDB from './config/db.js';
 
 dotenv.config({ path: './backend/.env' });
@@ -33,6 +34,7 @@ const seedDatabase = async () => {
     await Batch.deleteMany({});
     await Customer.deleteMany({});
     await Sale.deleteMany({});
+    await Prescription.deleteMany({});
 
     console.log('🏬 Creating Pharmacy Tenants and Branches...');
 
@@ -295,6 +297,38 @@ const seedDatabase = async () => {
       grandTotal: sampleMed.unitPrice * 2 * 1.05,
       paymentMethod: 'cash',
       status: 'completed'
+    });
+
+    console.log('📜 Seeding Sample Prescriptions & AI Interaction Checks...');
+
+    await Prescription.create({
+      pharmacy: pharmacy1._id,
+      branch: branch1_1._id,
+      patientName: customer1.name,
+      patientPhone: customer1.phone,
+      doctorName: 'Dr. Sarah Smith (Cardiologist)',
+      prescriptionUrl: 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=800&q=80',
+      ocrRawText: 'Rx: Amoxicillin 500mg - 1 cap BD x 7 days\nParacetamol 500mg - 1 tab TDS PRN',
+      ocrConfidence: 97.2,
+      extractedMedicines: [
+        {
+          medicineName: sampleMed.name,
+          strength: '500mg',
+          dosageFrequency: '1 cap BD x 7 days',
+          quantity: 14,
+          unitPrice: sampleMed.unitPrice,
+          matchedMedicineId: sampleMed._id
+        }
+      ],
+      drugInteractionAlerts: [
+        {
+          level: 'MODERATE',
+          pair: [sampleMed.name, 'Allopurinol'],
+          warningMessage: 'Potential mild skin rash sensitivity alert.'
+        }
+      ],
+      status: 'ocr_completed',
+      totalAmount: sampleMed.unitPrice * 14
     });
 
     console.log('✅ SEED COMPLETED SUCCESSFULLY!');

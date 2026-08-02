@@ -19,6 +19,8 @@ import backupRoutes from './routes/backupRoutes.js';
 import forecastRoutes from './routes/forecastRoutes.js';
 import reorderDuplicateRoutes from './routes/reorderDuplicateRoutes.js';
 import subscriptionRoutes from './routes/subscriptionRoutes.js';
+import prescriptionRoutes from './routes/prescriptionRoutes.js';
+import aiRoutes from './routes/aiRoutes.js';
 
 dotenv.config();
 
@@ -75,6 +77,8 @@ app.use('/api/v1/backups', backupRoutes);
 app.use('/api/v1/forecast', forecastRoutes);
 app.use('/api/v1', reorderDuplicateRoutes);
 app.use('/api/v1/subscriptions', subscriptionRoutes);
+app.use('/api/v1/prescriptions', prescriptionRoutes);
+app.use('/api/v1/ai', aiRoutes);
 
 // Healthcheck Route
 app.get('/', (req, res) => {

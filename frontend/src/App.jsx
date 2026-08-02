@@ -20,11 +20,14 @@ import BranchUserManagement from './pages/BranchUserManagement';
 import PharmacySettings from './pages/PharmacySettings';
 import ReportsAnalytics from './pages/ReportsAnalytics';
 import PharmacySubscription from './pages/PharmacySubscription';
+import PrescriptionManagement from './pages/PrescriptionManagement';
+import CustomerStorefront from './pages/CustomerStorefront';
 
 function App() {
   return (
     <Routes>
-      {/* Public Auth Routes */}
+      {/* Public Auth & Customer Storefront Routes */}
+      <Route path="/store" element={<CustomerStorefront />} />
       <Route path="/login" element={<Login />} />
       <Route path="/app/login" element={<Login />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
@@ -36,6 +39,7 @@ function App() {
         <Route element={<MainLayout />}>
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/pos" element={<POSBilling />} />
+          <Route path="/prescriptions" element={<PrescriptionManagement />} />
           <Route path="/inventory" element={<Inventory />} />
           <Route path="/expiry" element={<ExpiryManagement />} />
           <Route path="/barcode-labels" element={<BarcodeLabels />} />
