@@ -2,7 +2,7 @@ import mongoose from 'mongoose';
 
 const auditLogSchema = new mongoose.Schema(
   {
-    pharmacy: { type: mongoose.Schema.Types.ObjectId, ref: 'Pharmacy', required: true },
+    pharmacy: { type: mongoose.Schema.Types.ObjectId, ref: 'Pharmacy', default: null },
     branch: { type: mongoose.Schema.Types.ObjectId, ref: 'Branch', default: null },
     user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
     userName: { type: String, default: 'System' },

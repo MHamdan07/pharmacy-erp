@@ -75,15 +75,19 @@ export const login = async (req, res) => {
       );
 
       if (isLocked) {
-        await AuditLog.create({
-          pharmacy: user.pharmacy?._id,
-          branch: user.branch?._id,
-          user: user._id,
-          userName: user.name,
-          action: 'ACCOUNT_LOCKED',
-          module: 'Security',
-          details: `Account ${user.email} locked after 5 failed login attempts.`
-        });
+        try {
+          await AuditLog.create({
+            pharmacy: user.pharmacy?._id || user.pharmacy || null,
+            branch: user.branch?._id || user.branch || null,
+            user: user._id,
+            userName: user.name,
+            action: 'ACCOUNT_LOCKED',
+            module: 'Security',
+            details: `Account ${user.email} locked after 5 failed login attempts.`
+          });
+        } catch (e) {
+          console.error('AuditLog error:', e.message);
+        }
         return res.status(423).json({ message: 'Too many failed login attempts. Account locked for 15 minutes.' });
       }
       return res.status(401).json({ message: `Invalid credentials. ${5 - attempts} attempts remaining.` });
@@ -127,15 +131,19 @@ export const login = async (req, res) => {
 
     const activePermissions = user.permissions?.length ? user.permissions : DEFAULT_ROLE_PERMISSIONS[user.role] || [];
 
-    await AuditLog.create({
-      pharmacy: user.pharmacy?._id,
-      branch: user.branch?._id,
-      user: user._id,
-      userName: user.name,
-      action: 'USER_LOGIN',
-      module: 'Authentication',
-      details: `User ${user.email} logged in successfully.`
-    });
+    try {
+      await AuditLog.create({
+        pharmacy: user.pharmacy?._id || user.pharmacy || null,
+        branch: user.branch?._id || user.branch || null,
+        user: user._id,
+        userName: user.name,
+        action: 'USER_LOGIN',
+        module: 'Authentication',
+        details: `User ${user.email} logged in successfully.`
+      });
+    } catch (e) {
+      console.error('AuditLog error:', e.message);
+    }
 
     res.status(200).json({
       status: 'success',
