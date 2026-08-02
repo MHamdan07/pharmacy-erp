@@ -61,23 +61,27 @@ app.use(cors({
   optionsSuccessStatus: 200,
 }));
 
-// Route Registrations
-app.use('/api/v1/tenants', tenantRoutes);
-app.use('/api/v1/auth', authRoutes);
-app.use('/api/v1/inventory', inventoryRoutes);
-app.use('/api/v1/pos', posRoutes);
-app.use('/api/v1/transfers', transferRoutes);
-app.use('/api/v1/customers', customerRoutes);
-app.use('/api/v1/reports', reportRoutes);
-app.use('/api/v1/purchases', purchaseRoutes);
-app.use('/api/v1/expiry', expiryRoutes);
-app.use('/api/v1/notifications', notificationRoutes);
-app.use('/api/v1/backups', backupRoutes);
-app.use('/api/v1/forecast', forecastRoutes);
-app.use('/api/v1', reorderDuplicateRoutes);
-app.use('/api/v1/subscriptions', subscriptionRoutes);
-app.use('/api/v1/prescriptions', prescriptionRoutes);
-app.use('/api/v1/ai', aiRoutes);
+// Route Registrations (Supports both /api/v1 and /v1 for Vercel Serverless Function rewrites)
+const apiRouter = express.Router();
+apiRouter.use('/tenants', tenantRoutes);
+apiRouter.use('/auth', authRoutes);
+apiRouter.use('/inventory', inventoryRoutes);
+apiRouter.use('/pos', posRoutes);
+apiRouter.use('/transfers', transferRoutes);
+apiRouter.use('/customers', customerRoutes);
+apiRouter.use('/reports', reportRoutes);
+apiRouter.use('/purchases', purchaseRoutes);
+apiRouter.use('/expiry', expiryRoutes);
+apiRouter.use('/notifications', notificationRoutes);
+apiRouter.use('/backups', backupRoutes);
+apiRouter.use('/forecast', forecastRoutes);
+apiRouter.use('/subscriptions', subscriptionRoutes);
+apiRouter.use('/prescriptions', prescriptionRoutes);
+apiRouter.use('/ai', aiRoutes);
+apiRouter.use('/', reorderDuplicateRoutes);
+
+app.use('/api/v1', apiRouter);
+app.use('/v1', apiRouter);
 
 // Healthcheck Route
 app.get('/', (req, res) => {
