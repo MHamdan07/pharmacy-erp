@@ -21,6 +21,8 @@ import reorderDuplicateRoutes from './routes/reorderDuplicateRoutes.js';
 import subscriptionRoutes from './routes/subscriptionRoutes.js';
 import prescriptionRoutes from './routes/prescriptionRoutes.js';
 import aiRoutes from './routes/aiRoutes.js';
+import employeeRoutes from './routes/employeeRoutes.js';
+import settingsRoutes from './routes/settingsRoutes.js';
 
 dotenv.config();
 
@@ -78,6 +80,8 @@ apiRouter.use('/forecast', forecastRoutes);
 apiRouter.use('/subscriptions', subscriptionRoutes);
 apiRouter.use('/prescriptions', prescriptionRoutes);
 apiRouter.use('/ai', aiRoutes);
+apiRouter.use('/employees', employeeRoutes);
+apiRouter.use('/settings', settingsRoutes);
 apiRouter.use('/', reorderDuplicateRoutes);
 
 app.use('/api/v1', apiRouter);

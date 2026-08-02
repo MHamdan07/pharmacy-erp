@@ -22,6 +22,8 @@ import ReportsAnalytics from './pages/ReportsAnalytics';
 import PharmacySubscription from './pages/PharmacySubscription';
 import PrescriptionManagement from './pages/PrescriptionManagement';
 import CustomerStorefront from './pages/CustomerStorefront';
+import EmployeeManagement from './pages/EmployeeManagement';
+import SystemSettings from './pages/SystemSettings';
 
 function App() {
   return (
@@ -47,6 +49,8 @@ function App() {
           <Route path="/purchases" element={<PurchasesSuppliers />} />
           <Route path="/customers" element={<CustomersPatients />} />
           <Route path="/reports" element={<ReportsAnalytics />} />
+          <Route path="/employees" element={<EmployeeManagement />} />
+          <Route path="/system-settings" element={<SystemSettings />} />
           <Route path="/settings/subscription" element={<PharmacySubscription />} />
           <Route path="/settings/pharmacy" element={<PharmacySettings />} />
 
