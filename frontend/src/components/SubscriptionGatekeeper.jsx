@@ -6,11 +6,18 @@ import {
   ShieldAlert, RefreshCw, Lock, Sparkles, AlertTriangle
 } from 'lucide-react';
 
+import { useAuth } from '../context/AuthContext';
+
 const SubscriptionGatekeeper = () => {
+  const { user } = useAuth();
   const [subData, setSubData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showReactivateModal, setShowReactivateModal] = useState(false);
   const navigate = useNavigate();
+
+  if (user?.role === 'SuperAdmin') {
+    return <Outlet />;
+  }
 
   const fetchSubscriptionGate = useCallback(async () => {
     try {

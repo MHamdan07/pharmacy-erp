@@ -9,13 +9,7 @@ const MainLayout = () => {
   const isSuperAdmin = user?.role === 'SuperAdmin';
 
   if (isSuperAdmin) {
-    return (
-      <div className="min-h-screen bg-slate-950 text-slate-100 font-sans antialiased">
-        <main className="p-4 sm:p-6 lg:p-8 bg-slate-950">
-          <SubscriptionGatekeeper />
-        </main>
-      </div>
-    );
+    return <Outlet />;
   }
 
   return (
