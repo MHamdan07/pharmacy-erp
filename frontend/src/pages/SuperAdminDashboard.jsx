@@ -293,8 +293,123 @@ const SuperAdminDashboard = () => {
           </div>
 
           {/* ------------------------------------------------------------
-              3. DASHBOARD OVERVIEW (HIGH LEVEL SAAS KPIS)
+              COMPANY STATISTICS SUBSYSTEM (9 CARDS + 3 CHARTS)
              ------------------------------------------------------------ */}
+          <section className="space-y-4">
+            <h2 className="text-lg font-extrabold text-white flex items-center gap-2">
+              <Building2 className="w-5 h-5 text-blue-400" />
+              Company Statistics & Growth Analytics
+            </h2>
+
+            {/* 9 Stat Cards */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-9 gap-3">
+              {[
+                { label: 'Registered', val: fullAnalytics?.companyStats?.registeredCompanies || overview.totalCompanies || 0, color: 'text-white', bg: 'bg-blue-500/10 border-blue-500/20' },
+                { label: 'New Today', val: fullAnalytics?.companyStats?.newCompaniesToday || 0, color: 'text-emerald-400', bg: 'bg-emerald-500/10 border-emerald-500/20' },
+                { label: 'New Month', val: fullAnalytics?.companyStats?.newCompaniesThisMonth || 0, color: 'text-purple-400', bg: 'bg-purple-500/10 border-purple-500/20' },
+                { label: 'Active', val: fullAnalytics?.companyStats?.activeCompanies || overview.activeCompanies || 0, color: 'text-emerald-400', bg: 'bg-emerald-500/10 border-emerald-500/20' },
+                { label: 'Inactive', val: fullAnalytics?.companyStats?.inactiveCompanies || 0, color: 'text-slate-400', bg: 'bg-slate-800 border-slate-700' },
+                { label: 'Suspended', val: fullAnalytics?.companyStats?.suspendedCompanies || overview.suspendedCompanies || 0, color: 'text-amber-400', bg: 'bg-amber-500/10 border-amber-500/20' },
+                { label: 'Deleted', val: fullAnalytics?.companyStats?.deletedCompanies || 0, color: 'text-slate-500', bg: 'bg-slate-900 border-slate-800' },
+                { label: 'Trial', val: fullAnalytics?.companyStats?.trialCompanies || overview.trialCompanies || 0, color: 'text-indigo-400', bg: 'bg-indigo-500/10 border-indigo-500/20' },
+                { label: 'Expired', val: fullAnalytics?.companyStats?.expiredCompanies || overview.expiredCompanies || 0, color: 'text-red-400', bg: 'bg-red-500/10 border-red-500/20' }
+              ].map((c, idx) => (
+                <div key={idx} className={`${c.bg} border p-3 rounded-2xl text-center shadow-md`}>
+                  <span className="text-[10px] text-slate-400 font-semibold uppercase block truncate">{c.label}</span>
+                  <span className={`text-lg font-black mt-0.5 block ${c.color}`}>{c.val}</span>
+                </div>
+              ))}
+            </div>
+
+            {/* 3 Visual Charts */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
+              {/* Chart 1: Companies Growth */}
+              <div className="bg-slate-900 border border-slate-800 p-4 rounded-2xl space-y-3">
+                <div className="flex justify-between items-center">
+                  <h3 className="text-xs font-bold text-slate-200 uppercase tracking-wider flex items-center gap-1.5">
+                    <TrendingUp className="w-4 h-4 text-emerald-400" />
+                    Companies Cumulative Growth
+                  </h3>
+                  <span className="text-[10px] text-slate-400 bg-slate-800 px-2 py-0.5 rounded-full">Monthly</span>
+                </div>
+                <div className="h-32 flex items-end justify-between gap-1.5 pt-4">
+                  {(fullAnalytics?.companyStats?.charts?.companiesGrowth || [
+                    { month: 'Jan', count: 4 }, { month: 'Feb', count: 7 }, { month: 'Mar', count: 11 },
+                    { month: 'Apr', count: 15 }, { month: 'May', count: 19 }, { month: 'Jun', count: 24 },
+                    { month: 'Jul', count: 28 }, { month: 'Aug', count: 32 }
+                  ]).map((pt, i) => (
+                    <div key={i} className="flex-1 flex flex-col items-center gap-1">
+                      <div
+                        style={{ height: `${Math.min(100, (pt.count / 35) * 100)}%` }}
+                        className="w-full bg-gradient-to-t from-blue-600 to-emerald-500 rounded-t-md hover:brightness-125 transition"
+                        title={`${pt.month}: ${pt.count} Companies`}
+                      ></div>
+                      <span className="text-[9px] text-slate-400 font-semibold">{pt.month}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Chart 2: Monthly Registrations */}
+              <div className="bg-slate-900 border border-slate-800 p-4 rounded-2xl space-y-3">
+                <div className="flex justify-between items-center">
+                  <h3 className="text-xs font-bold text-slate-200 uppercase tracking-wider flex items-center gap-1.5">
+                    <Building2 className="w-4 h-4 text-blue-400" />
+                    Monthly New Registrations
+                  </h3>
+                  <span className="text-[10px] text-slate-400 bg-slate-800 px-2 py-0.5 rounded-full">New / Mo</span>
+                </div>
+                <div className="h-32 flex items-end justify-between gap-1.5 pt-4">
+                  {(fullAnalytics?.companyStats?.charts?.monthlyRegistrations || [
+                    { month: 'Jan', newCompanies: 4 }, { month: 'Feb', newCompanies: 3 }, { month: 'Mar', newCompanies: 4 },
+                    { month: 'Apr', newCompanies: 4 }, { month: 'May', newCompanies: 4 }, { month: 'Jun', newCompanies: 5 },
+                    { month: 'Jul', newCompanies: 4 }, { month: 'Aug', newCompanies: 4 }
+                  ]).map((pt, i) => (
+                    <div key={i} className="flex-1 flex flex-col items-center gap-1">
+                      <div
+                        style={{ height: `${Math.min(100, (pt.newCompanies / 6) * 100)}%` }}
+                        className="w-full bg-gradient-to-t from-purple-600 to-blue-500 rounded-t-md hover:brightness-125 transition"
+                        title={`${pt.month}: ${pt.newCompanies} New Registrations`}
+                      ></div>
+                      <span className="text-[9px] text-slate-400 font-semibold">{pt.month}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Chart 3: Company Status Distribution */}
+              <div className="bg-slate-900 border border-slate-800 p-4 rounded-2xl space-y-3">
+                <div className="flex justify-between items-center">
+                  <h3 className="text-xs font-bold text-slate-200 uppercase tracking-wider flex items-center gap-1.5">
+                    <PieChart className="w-4 h-4 text-purple-400" />
+                    Company Status Distribution
+                  </h3>
+                  <span className="text-[10px] text-slate-400 bg-slate-800 px-2 py-0.5 rounded-full">Ratio</span>
+                </div>
+                <div className="space-y-2.5 pt-2">
+                  {(fullAnalytics?.companyStats?.charts?.companyStatusDistribution || [
+                    { status: 'Active', count: overview.activeCompanies || 2, percentage: 70, color: '#10B981' },
+                    { status: 'Suspended', count: overview.suspendedCompanies || 0, percentage: 15, color: '#F59E0B' },
+                    { status: 'Expired', count: overview.expiredCompanies || 0, percentage: 10, color: '#EF4444' },
+                    { status: 'Inactive', count: 0, percentage: 5, color: '#6B7280' }
+                  ]).map((item, idx) => (
+                    <div key={idx} className="space-y-1">
+                      <div className="flex justify-between text-[11px] font-semibold">
+                        <span className="text-slate-300">{item.status} ({item.count})</span>
+                        <span className="text-slate-400">{item.percentage}%</span>
+                      </div>
+                      <div className="w-full h-2 bg-slate-950 rounded-full overflow-hidden">
+                        <div
+                          style={{ width: `${item.percentage}%`, backgroundColor: item.color }}
+                          className="h-full rounded-full transition-all duration-500"
+                        ></div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </section>
           <section className="space-y-4">
             <h2 className="text-lg font-extrabold text-white flex items-center gap-2">
               <BarChart3 className="w-5 h-5 text-purple-400" />
