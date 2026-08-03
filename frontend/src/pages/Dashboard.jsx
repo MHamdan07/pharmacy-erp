@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import API from '../api/axios';
-import { Link } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
 import {
   DollarSign, ShoppingBag, AlertTriangle, Clock, Building2, ShoppingCart,
   ArrowUpRight, TrendingUp, ShieldAlert, Award, PackageX, Activity, Users,
@@ -11,6 +11,10 @@ import {
 
 const Dashboard = () => {
   const { user, activeBranchId, branches } = useAuth();
+
+  if (user?.role === 'SuperAdmin') {
+    return <Navigate to="/superadmin" replace />;
+  }
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
 

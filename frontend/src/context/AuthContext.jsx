@@ -70,7 +70,11 @@ export const AuthProvider = ({ children }) => {
     }
 
     await fetchBranches(loggedUser);
-    navigate('/dashboard');
+    if (loggedUser?.role === 'SuperAdmin') {
+      navigate('/superadmin');
+    } else {
+      navigate('/dashboard');
+    }
     return loggedUser;
   };
 
