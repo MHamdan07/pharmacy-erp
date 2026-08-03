@@ -7,7 +7,8 @@ import {
   reactivateSubscription,
   suspendSubscription,
   renewSubscription,
-  getAllTenantSubscriptions
+  getAllTenantSubscriptions,
+  getSuperAdminFullAnalytics
 } from '../controllers/subscriptionController.js';
 import { protect } from '../middlewares/authMiddleware.js';
 import { attachTenant } from '../middlewares/tenantMiddleware.js';
@@ -20,6 +21,7 @@ router.use(protect, attachTenant);
 router.get('/my-subscription', getMySubscription);
 router.get('/plans', getSubscriptionPlans);
 router.get('/admin/all-subscriptions', authorizeRoles('SuperAdmin'), getAllTenantSubscriptions);
+router.get('/admin/full-analytics', authorizeRoles('SuperAdmin'), getSuperAdminFullAnalytics);
 router.post('/change-plan', authorizeRoles('Owner', 'SuperAdmin', 'Admin'), changeSubscriptionPlan);
 router.post('/change-plan/:pharmacyId', authorizeRoles('Owner', 'SuperAdmin'), changeSubscriptionPlan);
 router.post('/suspend/:pharmacyId', authorizeRoles('SuperAdmin'), suspendSubscription);

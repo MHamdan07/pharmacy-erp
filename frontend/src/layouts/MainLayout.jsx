@@ -1,10 +1,23 @@
 import React from 'react';
-import { Outlet } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Sidebar from '../components/Sidebar';
 import SubscriptionGatekeeper from '../components/SubscriptionGatekeeper';
+import { useAuth } from '../context/AuthContext';
 
 const MainLayout = () => {
+  const { user } = useAuth();
+  const isSuperAdmin = user?.role === 'SuperAdmin';
+
+  if (isSuperAdmin) {
+    return (
+      <div className="min-h-screen bg-slate-950 text-slate-100 font-sans antialiased">
+        <main className="p-4 sm:p-6 lg:p-8 bg-slate-950">
+          <SubscriptionGatekeeper />
+        </main>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans antialiased">
       {/* Persistent Top Navigation Bar */}
