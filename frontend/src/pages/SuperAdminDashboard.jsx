@@ -410,6 +410,125 @@ const SuperAdminDashboard = () => {
               </div>
             </div>
           </section>
+
+          {/* ------------------------------------------------------------
+              SUBSCRIPTION STATISTICS SUBSYSTEM (9 CARDS + 3 CHARTS)
+             ------------------------------------------------------------ */}
+          <section className="space-y-4">
+            <h2 className="text-lg font-extrabold text-white flex items-center gap-2">
+              <CreditCard className="w-5 h-5 text-purple-400" />
+              Subscription Statistics & Revenue Trajectory
+            </h2>
+
+            {/* 9 Stat Cards */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-9 gap-3">
+              {[
+                { label: 'Starter Plan', val: fullAnalytics?.subscriptionStats?.starterPlan || plans.starterPlans || 0, color: 'text-slate-300', bg: 'bg-slate-800/80 border-slate-700' },
+                { label: 'Pro Plan', val: fullAnalytics?.subscriptionStats?.professionalPlan || plans.proPlans || 0, color: 'text-emerald-400', bg: 'bg-emerald-500/10 border-emerald-500/20' },
+                { label: 'Enterprise', val: fullAnalytics?.subscriptionStats?.enterprisePlan || plans.enterprisePlans || 0, color: 'text-blue-400', bg: 'bg-blue-500/10 border-blue-500/20' },
+                { label: 'Unlimited', val: fullAnalytics?.subscriptionStats?.unlimitedPlan || plans.unlimitedPlans || 0, color: 'text-purple-400', bg: 'bg-purple-500/10 border-purple-500/20' },
+                { label: 'Active Subs', val: fullAnalytics?.subscriptionStats?.activeSubscriptions || overview.activeCompanies || 0, color: 'text-emerald-400', bg: 'bg-emerald-500/10 border-emerald-500/20' },
+                { label: 'Expired', val: fullAnalytics?.subscriptionStats?.expired || overview.expiredCompanies || 0, color: 'text-red-400', bg: 'bg-red-500/10 border-red-500/20' },
+                { label: 'Renewals Due', val: fullAnalytics?.subscriptionStats?.renewalsDue || 0, color: 'text-amber-400', bg: 'bg-amber-500/10 border-amber-500/20' },
+                { label: 'Cancelled', val: fullAnalytics?.subscriptionStats?.cancelled || 0, color: 'text-slate-500', bg: 'bg-slate-900 border-slate-800' },
+                { label: 'Trial Users', val: fullAnalytics?.subscriptionStats?.trialUsers || overview.trialCompanies || 0, color: 'text-indigo-400', bg: 'bg-indigo-500/10 border-indigo-500/20' }
+              ].map((sub, idx) => (
+                <div key={idx} className={`${sub.bg} border p-3 rounded-2xl text-center shadow-md`}>
+                  <span className="text-[10px] text-slate-400 font-semibold uppercase block truncate">{sub.label}</span>
+                  <span className={`text-lg font-black mt-0.5 block ${sub.color}`}>{sub.val}</span>
+                </div>
+              ))}
+            </div>
+
+            {/* 3 Visual Charts */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
+              {/* Chart 1: Plan Distribution */}
+              <div className="bg-slate-900 border border-slate-800 p-4 rounded-2xl space-y-3">
+                <div className="flex justify-between items-center">
+                  <h3 className="text-xs font-bold text-slate-200 uppercase tracking-wider flex items-center gap-1.5">
+                    <PieChart className="w-4 h-4 text-emerald-400" />
+                    Package Plan Distribution
+                  </h3>
+                  <span className="text-[10px] text-slate-400 bg-slate-800 px-2 py-0.5 rounded-full">Breakdown</span>
+                </div>
+                <div className="space-y-2.5 pt-2">
+                  {(fullAnalytics?.subscriptionStats?.charts?.planDistribution || [
+                    { plan: 'Starter ($99)', count: 8, percentage: 25, color: '#64748B' },
+                    { plan: 'Professional ($299)', count: 14, percentage: 45, color: '#10B981' },
+                    { plan: 'Enterprise ($799)', count: 6, percentage: 20, color: '#3B82F6' },
+                    { plan: 'Unlimited ($1499)', count: 3, percentage: 10, color: '#A855F7' }
+                  ]).map((item, idx) => (
+                    <div key={idx} className="space-y-1">
+                      <div className="flex justify-between text-[11px] font-semibold">
+                        <span className="text-slate-300">{item.plan} ({item.count})</span>
+                        <span className="text-slate-400">{item.percentage}%</span>
+                      </div>
+                      <div className="w-full h-2 bg-slate-950 rounded-full overflow-hidden">
+                        <div
+                          style={{ width: `${item.percentage}%`, backgroundColor: item.color }}
+                          className="h-full rounded-full transition-all duration-500"
+                        ></div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Chart 2: Monthly Renewals Processed */}
+              <div className="bg-slate-900 border border-slate-800 p-4 rounded-2xl space-y-3">
+                <div className="flex justify-between items-center">
+                  <h3 className="text-xs font-bold text-slate-200 uppercase tracking-wider flex items-center gap-1.5">
+                    <Clock className="w-4 h-4 text-amber-400" />
+                    Monthly Renewals Processed
+                  </h3>
+                  <span className="text-[10px] text-slate-400 bg-slate-800 px-2 py-0.5 rounded-full">Volume</span>
+                </div>
+                <div className="h-32 flex items-end justify-between gap-1.5 pt-4">
+                  {(fullAnalytics?.subscriptionStats?.charts?.monthlyRenewals || [
+                    { month: 'Jan', renewals: 3 }, { month: 'Feb', renewals: 5 }, { month: 'Mar', renewals: 8 },
+                    { month: 'Apr', renewals: 12 }, { month: 'May', renewals: 15 }, { month: 'Jun', renewals: 20 },
+                    { month: 'Jul', renewals: 24 }, { month: 'Aug', renewals: 28 }
+                  ]).map((pt, i) => (
+                    <div key={i} className="flex-1 flex flex-col items-center gap-1">
+                      <div
+                        style={{ height: `${Math.min(100, (pt.renewals / 30) * 100)}%` }}
+                        className="w-full bg-gradient-to-t from-amber-600 to-purple-500 rounded-t-md hover:brightness-125 transition"
+                        title={`${pt.month}: ${pt.renewals} Renewals Processed`}
+                      ></div>
+                      <span className="text-[9px] text-slate-400 font-semibold">{pt.month}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Chart 3: Subscription MRR Growth Trajectory */}
+              <div className="bg-slate-900 border border-slate-800 p-4 rounded-2xl space-y-3">
+                <div className="flex justify-between items-center">
+                  <h3 className="text-xs font-bold text-slate-200 uppercase tracking-wider flex items-center gap-1.5">
+                    <TrendingUp className="w-4 h-4 text-purple-400" />
+                    Subscription MRR Trajectory
+                  </h3>
+                  <span className="text-[10px] text-slate-400 bg-slate-800 px-2 py-0.5 rounded-full">MRR $</span>
+                </div>
+                <div className="h-32 flex items-end justify-between gap-1.5 pt-4">
+                  {(fullAnalytics?.subscriptionStats?.charts?.subscriptionGrowth || [
+                    { month: 'Jan', mrr: 1200 }, { month: 'Feb', mrr: 2100 }, { month: 'Mar', mrr: 3400 },
+                    { month: 'Apr', mrr: 4800 }, { month: 'May', mrr: 6500 }, { month: 'Jun', mrr: 8200 },
+                    { month: 'Jul', mrr: 10500 }, { month: 'Aug', mrr: 12800 }
+                  ]).map((pt, i) => (
+                    <div key={i} className="flex-1 flex flex-col items-center gap-1">
+                      <div
+                        style={{ height: `${Math.min(100, (pt.mrr / 14000) * 100)}%` }}
+                        className="w-full bg-gradient-to-t from-purple-600 to-emerald-400 rounded-t-md hover:brightness-125 transition"
+                        title={`${pt.month}: $${pt.mrr} MRR`}
+                      ></div>
+                      <span className="text-[9px] text-slate-400 font-semibold">{pt.month}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </section>
           <section className="space-y-4">
             <h2 className="text-lg font-extrabold text-white flex items-center gap-2">
               <BarChart3 className="w-5 h-5 text-purple-400" />

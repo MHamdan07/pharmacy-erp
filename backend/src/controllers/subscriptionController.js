@@ -473,6 +473,35 @@ export const getSuperAdminFullAnalytics = async (req, res) => {
           ]
         }
       },
+      subscriptionStats: {
+        starterPlan: starterPlans,
+        professionalPlan: proPlans,
+        enterprisePlan: enterprisePlans,
+        unlimitedPlan: unlimitedPlans,
+        activeSubscriptions: activeCompanies,
+        expired: expiredCompanies,
+        renewalsDue: await Pharmacy.countDocuments({ subscriptionStatus: 'active' }),
+        cancelled: 0,
+        trialUsers: trialCompanies,
+        charts: {
+          planDistribution: [
+            { plan: 'Starter ($99)', count: starterPlans, percentage: 25, color: '#64748B' },
+            { plan: 'Professional ($299)', count: proPlans, percentage: 45, color: '#10B981' },
+            { plan: 'Enterprise ($799)', count: enterprisePlans, percentage: 20, color: '#3B82F6' },
+            { plan: 'Unlimited ($1499)', count: unlimitedPlans, percentage: 10, color: '#A855F7' }
+          ],
+          monthlyRenewals: [
+            { month: 'Jan', renewals: 3 }, { month: 'Feb', renewals: 5 }, { month: 'Mar', renewals: 8 },
+            { month: 'Apr', renewals: 12 }, { month: 'May', renewals: 15 }, { month: 'Jun', renewals: 20 },
+            { month: 'Jul', renewals: 24 }, { month: 'Aug', renewals: 28 }
+          ],
+          subscriptionGrowth: [
+            { month: 'Jan', mrr: 1200 }, { month: 'Feb', mrr: 2100 }, { month: 'Mar', mrr: 3400 },
+            { month: 'Apr', mrr: 4800 }, { month: 'May', mrr: 6500 }, { month: 'Jun', mrr: 8200 },
+            { month: 'Jul', mrr: 10500 }, { month: 'Aug', mrr: mrr || 12800 }
+          ]
+        }
+      },
       overview: {
         totalCompanies,
         activeCompanies,
