@@ -1,20 +1,32 @@
 {
-  "buildCommand": "npm run build",
-  "outputDirectory": "frontend/dist",
+  "version": 2,
   "env": {
     "MONGO_URI": "mongodb+srv://entermh07_db_user:password12345@cluster0.0g9n9mz.mongodb.net/pharmacy_erp?retryWrites=true&w=majority&appName=Cluster0",
     "NODE_ENV": "production",
     "JWT_ACCESS_SECRET": "super_secret_pharmacy_erp_access_key_2026",
     "JWT_REFRESH_SECRET": "super_secret_pharmacy_erp_refresh_key_2026"
   },
-  "rewrites": [
+  "builds": [
     {
-      "source": "/api/(.*)",
-      "destination": "/api/index.js"
+      "src": "api/index.js",
+      "use": "@vercel/node"
     },
     {
-      "source": "/(.*)",
-      "destination": "/index.html"
+      "src": "package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "frontend/dist"
+      }
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "api/index.js"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "frontend/dist/$1"
     }
   ]
 }
