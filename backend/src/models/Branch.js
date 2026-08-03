@@ -7,9 +7,13 @@ const branchSchema = new mongoose.Schema({
   phone: { type: String, required: true, trim: true },
   email: { type: String, default: '' },
   address: { type: String, required: true },
+  manager: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  openingHours: { type: String, default: '08:00 AM - 10:00 PM' },
+  isWarehouse: { type: Boolean, default: false },
   isHeadquarter: { type: Boolean, default: false },
   receiptHeader: { type: String, default: 'Thank you for visiting!' },
   receiptFooter: { type: String, default: 'Get well soon!' },
+  status: { type: String, enum: ['active', 'suspended', 'closed'], default: 'active' },
   isActive: { type: Boolean, default: true }
 }, { timestamps: true });
 

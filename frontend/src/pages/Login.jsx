@@ -24,7 +24,11 @@ const Login = () => {
         setRequires2FA(true);
       }
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to login. Please check credentials.');
+      if (!err.response) {
+        setError('Cannot connect to backend server. Please verify the backend server is running on http://localhost:5000');
+      } else {
+        setError(err.response?.data?.message || 'Failed to login. Please check credentials.');
+      }
     } finally {
       setLoading(false);
     }

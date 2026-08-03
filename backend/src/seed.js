@@ -91,11 +91,11 @@ const seedDatabase = async () => {
 
     console.log('👑 Creating Pharmacy Users...');
 
-    // Pharmacy 1 Owner
+    // 1. Company Owner (Enterprise Control)
     const owner1 = await User.create({
-      name: 'Sarah Jenkins',
-      email: 'owner@hcplus.com',
-      password: 'PharmERP@2026!',
+      name: 'Sarah Jenkins (Company Owner)',
+      email: 'owner@pharmacy.com',
+      password: 'OwnerPass@2026!',
       role: 'Owner',
       pharmacy: pharmacy1._id,
       branch: branch1_1._id,
@@ -103,26 +103,52 @@ const seedDatabase = async () => {
       phone: '+1 555 0111'
     });
 
-    const owner2 = await User.create({
-      name: 'Dr. Arthur Pendelton',
-      email: 'owner@healthcare.com',
-      password: 'PharmERP@2026!',
-      role: 'Owner',
+    // 2. Branch Manager (Main HQ Branch)
+    const branchManager1 = await User.create({
+      name: 'David Ross (HQ Branch Manager)',
+      email: 'manager.hq@pharmacy.com',
+      password: 'ManagerPass@2026!',
+      role: 'Branch Manager',
       pharmacy: pharmacy1._id,
       branch: branch1_1._id,
-      assignedBranches: [branch1_1._id, branch1_2._id],
-      phone: '+1 555 0119'
+      assignedBranches: [branch1_1._id],
+      phone: '+1 555 0115'
     });
 
+    // 3. Branch Manager (Downtown Branch Outlet)
+    const branchManager2 = await User.create({
+      name: 'Elena Rostova (Downtown Branch Manager)',
+      email: 'manager.downtown@pharmacy.com',
+      password: 'ManagerPass@2026!',
+      role: 'Branch Manager',
+      pharmacy: pharmacy1._id,
+      branch: branch1_2._id,
+      assignedBranches: [branch1_2._id],
+      phone: '+1 555 0116'
+    });
+
+    // 4. Clinical Pharmacist
     const pharmacist1 = await User.create({
-      name: 'Dr. Michael Chang',
-      email: 'pharmacist@hcplus.com',
-      password: 'PharmERP@2026!',
+      name: 'Dr. Michael Chang (Pharmacist)',
+      email: 'pharmacist@pharmacy.com',
+      password: 'PharmPass@2026!',
       role: 'Pharmacist',
       pharmacy: pharmacy1._id,
       branch: branch1_1._id,
       assignedBranches: [branch1_1._id],
       phone: '+1 555 0112'
+    });
+
+    // 5. Cashier (POS Terminal)
+    const cashier1 = await User.create({
+      name: 'Alex Rivera (POS Cashier)',
+      email: 'cashier@pharmacy.com',
+      password: 'CashierPass@2026!',
+      role: 'Cashier',
+      pharmacy: pharmacy1._id,
+      branch: branch1_1._id,
+      assignedBranches: [branch1_1._id],
+      phone: '+1 555 0113'
     });
 
     console.log('📦 Creating Categories & Suppliers...');

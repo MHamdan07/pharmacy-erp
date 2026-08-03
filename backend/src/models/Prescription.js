@@ -60,6 +60,40 @@ const prescriptionSchema = new mongoose.Schema(
         warningMessage: String
       }
     ],
+    fileType: {
+      type: String,
+      enum: ['image', 'pdf', 'camera_scan'],
+      default: 'image'
+    },
+    isCompressed: {
+      type: Boolean,
+      default: true
+    },
+    rxIssueDate: {
+      type: Date,
+      default: Date.now
+    },
+    rxExpiryDate: {
+      type: Date,
+      default: () => new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+    },
+    isExpired: {
+      type: Boolean,
+      default: false
+    },
+    workflowStage: {
+      type: String,
+      enum: ['upload', 'ocr', 'compression', 'ai_detection', 'validation', 'pharmacist_review', 'approval', 'invoice', 'payment', 'delivery'],
+      default: 'upload'
+    },
+    suggestedAlternatives: [
+      {
+        originalDrug: String,
+        genericName: String,
+        suggestedBrand: String,
+        priceDifference: Number
+      }
+    ],
     status: {
       type: String,
       enum: ['pending', 'ocr_completed', 'approved', 'rejected', 'fulfilled'],

@@ -1,15 +1,29 @@
-# 20 Database Schema Architecture
+# 20 Database Architecture, Technology Stack & Deployment
 
 ## Overview
-The Database Architecture uses **MongoDB Atlas** with Mongoose ODM to maintain a scalable, multi-tenant document store.
+The Pharmacy ERP system leverages an enterprise-grade technology stack powered by **MongoDB Atlas**, Node.js microservices, React 19 web interfaces, Next.js portals, and Flutter mobile applications deployed on Vercel serverless cloud infrastructure.
 
-## Core Schemas
-- `pharmacies`: SaaS tenant accounts with domain prefix, contact info, and subscription plan.
-- `branches`: Physical store locations linked to parent pharmacy tenant.
-- `users`: User profiles with role, assigned branches, password hash, and 2FA secrets.
-- `medicines`: Master product catalog with brand name, generic name, barcode, and min stock level.
-- `batches`: Individual inventory shipments with batch number, FEFO expiry date, stock quantity, and pricing.
-- `sales`: POS transaction records and itemized line details.
-- `prescriptions`: Patient prescriptions, OCR raw text, extracted drugs, interaction alerts, and approval status.
-- `employees`: Staff profiles, shifts, attendance, and role permissions.
-- `settings`: Tenant configuration, receipt templates, and tax parameters.
+---
+
+## Complete Technology Stack (11 Tech Layers)
+
+1. **MongoDB**: High-performance multi-tenant document database storing tenant schemas, medicines, inventory batches, and sales transactions.
+2. **Mongoose / Prisma ODM**: Object Document Mapper enforcing strict schema validation, indexes, and multi-tenant discriminators.
+3. **Node.js**: Asynchronous event-driven server runtime environment.
+4. **Express.js**: RESTful API framework handling authentication, rate limiting, and route controllers.
+5. **React.js (React 19)**: Single-Page Application (SPA) framework powering the ERP operations dashboard and POS billing terminal.
+6. **Next.js**: Server-Side Rendered (SSR) web framework powering public portals and SEO-optimized marketing pages.
+7. **Flutter**: Cross-platform mobile application framework delivering Customer & Employee mobile apps for iOS and Android.
+8. **Redis**: High-speed in-memory data store for session caching, rate limiting, and temporary state management.
+9. **Cloudinary**: Cloud asset management for prescription scan images, PDF invoices, and company logos.
+10. **JWT (JSON Web Tokens)**: Secure token authentication using 15-minute Access Tokens and 7-day HttpOnly Refresh Cookies.
+11. **Socket.io**: Real-time bi-directional WebSocket engine powering live order tracking and instant low-stock notifications.
+
+---
+
+## Deployment Architecture & CI/CD Pipeline
+
+1. **Vercel**: Monorepo serverless cloud deployment hosting the frontend SPA and Node serverless API functions (`/api/index.js`).
+2. **MongoDB Atlas**: Fully managed multi-region cloud database cluster with automated snapshot backups and failover.
+3. **Cloudinary**: High-availability CDN hosting compressed prescription scans and media assets.
+4. **GitHub Actions**: Automated CI/CD pipelines executing lint checks, unit testing suites, and continuous production deployment on `git push origin main`.

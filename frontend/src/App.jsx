@@ -24,11 +24,14 @@ import PrescriptionManagement from './pages/PrescriptionManagement';
 import CustomerStorefront from './pages/CustomerStorefront';
 import EmployeeManagement from './pages/EmployeeManagement';
 import SystemSettings from './pages/SystemSettings';
+import LandingPage from './pages/LandingPage';
 
 function App() {
   return (
     <Routes>
-      {/* Public Auth & Customer Storefront Routes */}
+      {/* ERP SaaS Homepage & Public Routes */}
+      <Route path="/" element={<LandingPage />} />
+      <Route path="/landing" element={<LandingPage />} />
       <Route path="/store" element={<CustomerStorefront />} />
       <Route path="/login" element={<Login />} />
       <Route path="/app/login" element={<Login />} />

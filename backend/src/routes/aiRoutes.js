@@ -4,13 +4,13 @@ import {
   suggestGenericAlternatives,
   getAIDemandForecast
 } from '../controllers/aiController.js';
-import { authenticate } from '../middlewares/authMiddleware.js';
-import { tenantContext } from '../middlewares/tenantContext.js';
+import { protect } from '../middlewares/authMiddleware.js';
+import { attachTenant } from '../middlewares/tenantMiddleware.js';
 
 const router = express.Router();
 
-router.use(authenticate);
-router.use(tenantContext);
+router.use(protect);
+router.use(attachTenant);
 
 router.post('/check-interactions', checkDrugInteractions);
 router.post('/suggest-alternatives', suggestGenericAlternatives);

@@ -242,3 +242,44 @@ export const updatePharmacyDetails = async (req, res) => {
     res.status(400).json({ message: error.message });
   }
 };
+
+// Suspend or Reactivate a Branch (Owner / Admin)
+export const suspendBranch = async (req, res) => {
+  try {
+    const { branchId, status } = req.body; // status: 'active' | 'suspended'
+    const branch = await Branch.findOneAndUpdate(
+      { _id: branchId, pharmacy: req.pharmacyId },
+      { isActive: status === 'active' },
+      { new: true }
+    );
+    if (!branch) {
+      return res.status(404).json({ message: 'Branch store not found' });
+    }
+
+    res.json({ message: `Branch status updated to ${status}`, branch });
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+// Transfer Employee between branches (Owner / Admin)
+export const transferEmployee = async (req, res) => {
+  try {
+    const { userId, targetBranchId } = req.body;
+    const targetBranch = await Branch.findOne({ _id: targetBranchId, pharmacy: req.pharmacyId });
+    if (!targetBranch) {
+      return res.status(404).json({ message: 'Target branch store not found' });
+    }
+
+    const user = await User.findOneAndUpdate(
+      { _id: userId, pharmacy: req.pharmacyId },
+      { branch: targetBranch._id },
+      { new: true }
+    );
+
+    res.json({ message: `Employee ${user?.name} transferred to ${targetBranch.name} successfully`, user });
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+

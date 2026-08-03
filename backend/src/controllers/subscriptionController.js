@@ -54,6 +54,20 @@ export const ensureDefaultPlansExist = async () => {
           sms: true, email: true, clinicalWarnings: true, auditLogs: true, riskMatrix: true,
           transfers: true, purchases: true, backups: true, aiForecast: true, voiceSearch: true, webhooks: true, apiAccess: true
         }
+      },
+      {
+        name: 'Unlimited',
+        price: 1499,
+        yearlyPrice: 14990,
+        billingCycle: 'monthly',
+        description: 'For enterprise pharmacy networks requiring unlimited scaling & dedicated support',
+        limits: { maxBranches: 99999, maxUsers: 99999, maxMedicines: 9999999, maxStorageGB: 1000, maxApiRequests: 5000000 },
+        features: {
+          pos: true, inventory: true, medicines: true, expiry: true, barcode: true, qrScanner: true,
+          reports: true, customers: true, multiBranch: true, accounting: true, purchaseApproval: true,
+          sms: true, email: true, clinicalWarnings: true, auditLogs: true, riskMatrix: true,
+          transfers: true, purchases: true, backups: true, aiForecast: true, voiceSearch: true, webhooks: true, apiAccess: true, dedicatedSupport: true
+        }
       }
     ]);
   }
@@ -287,3 +301,60 @@ export const reactivateSubscription = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+// Suspend Subscription (SuperAdmin Control)
+export const suspendSubscription = async (req, res) => {
+  try {
+    const targetPharmacyId = req.params.pharmacyId || req.pharmacyId;
+
+    let sub = await Subscription.findOne({ pharmacy: targetPharmacyId });
+    if (sub) {
+      sub.status = 'suspended';
+      await sub.save();
+    }
+
+    await Pharmacy.findByIdAndUpdate(targetPharmacyId, { subscriptionStatus: 'suspended' });
+
+    await AuditLog.create({
+      pharmacy: targetPharmacyId,
+      user: req.userFull?._id || null,
+      userName: req.userFull?.name || 'System Administrator',
+      action: 'SUBSCRIPTION_SUSPENDED',
+      module: 'SaaS Subscriptions',
+      details: `Subscription suspended by SuperAdmin`
+    });
+
+    res.json({ message: 'Subscription suspended successfully.', subscription: sub });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// Renew Subscription (Extends renewal date by 30 days)
+export const renewSubscription = async (req, res) => {
+  try {
+    const targetPharmacyId = req.params.pharmacyId || req.pharmacyId;
+
+    let sub = await Subscription.findOne({ pharmacy: targetPharmacyId });
+    if (!sub) {
+      return res.status(404).json({ message: 'Subscription record not found' });
+    }
+
+    const currentExpiry = sub.expiresAt && sub.expiresAt > new Date() ? sub.expiresAt : new Date();
+    const newExpiry = new Date(currentExpiry.getTime() + 30 * 24 * 60 * 60 * 1000);
+
+    sub.renewalDate = newExpiry;
+    sub.expiresAt = newExpiry;
+    sub.status = 'active';
+    sub.cancelledAt = null;
+    sub.cancelAtPeriodEnd = false;
+    await sub.save();
+
+    await Pharmacy.findByIdAndUpdate(targetPharmacyId, { subscriptionStatus: 'active' });
+
+    res.json({ message: `Subscription renewed until ${newExpiry.toLocaleDateString()}`, subscription: sub });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
