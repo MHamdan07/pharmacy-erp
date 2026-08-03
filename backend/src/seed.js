@@ -91,6 +91,18 @@ const seedDatabase = async () => {
 
     console.log('👑 Creating Pharmacy Users...');
 
+    // 0. System Super Admin (SaaS Platform Controller)
+    const superAdmin = await User.create({
+      name: 'System Super Admin',
+      email: 'superadmin@pharmacy.com',
+      password: 'SuperAdminPass@2026!',
+      role: 'SuperAdmin',
+      pharmacy: pharmacy1._id,
+      branch: branch1_1._id,
+      assignedBranches: [branch1_1._id, branch1_2._id],
+      phone: '+1 800 555 9999'
+    });
+
     // 1. Company Owner (Enterprise Control)
     const owner1 = await User.create({
       name: 'Sarah Jenkins (Company Owner)',

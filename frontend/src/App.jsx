@@ -25,6 +25,7 @@ import CustomerStorefront from './pages/CustomerStorefront';
 import EmployeeManagement from './pages/EmployeeManagement';
 import SystemSettings from './pages/SystemSettings';
 import LandingPage from './pages/LandingPage';
+import SuperAdminDashboard from './pages/SuperAdminDashboard';
 
 function App() {
   return (
@@ -43,6 +44,7 @@ function App() {
       <Route element={<ProtectedRoute />}>
         <Route element={<MainLayout />}>
           <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/superadmin" element={<SuperAdminDashboard />} />
           <Route path="/pos" element={<POSBilling />} />
           <Route path="/prescriptions" element={<PrescriptionManagement />} />
           <Route path="/inventory" element={<Inventory />} />

@@ -358,3 +358,44 @@ export const renewSubscription = async (req, res) => {
   }
 };
 
+// Master SuperAdmin list of all registered pharmacy companies & subscriptions
+export const getAllTenantSubscriptions = async (req, res) => {
+  try {
+    const pharmacies = await Pharmacy.find().lean();
+    const result = await Promise.all(
+      pharmacies.map(async (pharm) => {
+        const sub = await Subscription.findOne({ pharmacy: pharm._id }).populate('plan');
+        const branchCount = await Branch.countDocuments({ pharmacy: pharm._id });
+        const userCount = await User.countDocuments({ pharmacy: pharm._id });
+        const owner = await User.findOne({ pharmacy: pharm._id, role: 'Owner' }).select('name email phone');
+
+        return {
+          pharmacy: pharm,
+          subscription: sub,
+          branchCount,
+          userCount,
+          owner: owner || { name: 'Unassigned Owner', email: pharm.email || 'N/A' }
+        };
+      })
+    );
+
+    // Calculate SaaS KPIs
+    const totalCompanies = result.length;
+    const activeCompanies = result.filter(item => item.pharmacy.subscriptionStatus === 'active').length;
+    const suspendedCompanies = result.filter(item => item.pharmacy.subscriptionStatus === 'suspended').length;
+    const mrr = result.reduce((acc, item) => acc + (item.subscription?.price || 0), 0);
+
+    res.json({
+      summary: {
+        totalCompanies,
+        activeCompanies,
+        suspendedCompanies,
+        mrr
+      },
+      companies: result
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to fetch tenant subscriptions: ' + error.message });
+  }
+};
+

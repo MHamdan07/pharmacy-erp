@@ -56,6 +56,7 @@ const Sidebar = () => {
     { label: 'Branch & Staff Admin', path: '/settings/branches', icon: Building2, flag: 'multiBranch' },
     { label: 'Employee Staff Roster', path: '/employees', icon: Users },
     { label: 'System Settings', path: '/system-settings', icon: Settings },
+    { label: 'SuperAdmin SaaS Console', path: '/superadmin', icon: ShieldCheck, highlight: true },
     { label: 'My Subscription', path: '/settings/subscription', icon: CreditCard, highlight: true },
     { label: 'Pharmacy Settings', path: '/settings/pharmacy', icon: Settings },
     { label: 'Reports & Audit', path: '/reports', icon: FileBarChart, flag: 'reports' }
