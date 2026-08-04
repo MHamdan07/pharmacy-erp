@@ -7,6 +7,7 @@ import Branch from '../models/Branch.js';
 import User from '../models/User.js';
 import Medicine from '../models/Medicine.js';
 import AuditLog from '../models/AuditLog.js';
+import bcrypt from 'bcryptjs';
 
 // Seed default plans into DB if empty
 export const ensureDefaultPlansExist = async () => {
@@ -369,12 +370,18 @@ export const getAllTenantSubscriptions = async (req, res) => {
         const userCount = await User.countDocuments({ pharmacy: pharm._id });
         const owner = await User.findOne({ pharmacy: pharm._id, role: 'Owner' }).select('name email phone');
 
+        const now = new Date();
+        const expiryDate = sub?.expiresAt || sub?.renewalDate || new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+        const remainingDays = Math.max(0, Math.ceil((new Date(expiryDate) - now) / (1000 * 60 * 60 * 24)));
+
         return {
           pharmacy: pharm,
           subscription: sub,
           branchCount,
           userCount,
-          owner: owner || { name: 'Unassigned Owner', email: pharm.email || 'N/A' }
+          owner: owner || { name: 'Unassigned Owner', email: pharm.email || 'N/A' },
+          remainingDays,
+          expiryDateFormatted: new Date(expiryDate).toLocaleDateString()
         };
       })
     );
@@ -396,6 +403,125 @@ export const getAllTenantSubscriptions = async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({ message: 'Failed to fetch tenant subscriptions: ' + error.message });
+  }
+};
+
+// SuperAdmin Endpoint: Update Tenant Company, Owner Profile, Password & Plan
+export const updateTenantCompany = async (req, res) => {
+  try {
+    const { pharmacyId } = req.params;
+    const {
+      pharmacyName,
+      pharmacyCode,
+      phone,
+      address,
+      ownerName,
+      ownerEmail,
+      ownerPassword,
+      plan,
+      subscriptionStatus,
+      extendDays
+    } = req.body;
+
+    const pharmacy = await Pharmacy.findById(pharmacyId);
+    if (!pharmacy) {
+      return res.status(404).json({ message: 'Pharmacy tenant not found' });
+    }
+
+    // 1. Update Pharmacy
+    if (pharmacyName) pharmacy.name = pharmacyName;
+    if (pharmacyCode) pharmacy.code = pharmacyCode.toUpperCase();
+    if (phone !== undefined) pharmacy.phone = phone;
+    if (address !== undefined) pharmacy.address = address;
+    if (subscriptionStatus) pharmacy.subscriptionStatus = subscriptionStatus;
+
+    if (plan && plan !== pharmacy.plan) {
+      pharmacy.plan = plan;
+      await syncPharmacyPlanFeatures(pharmacyId, plan);
+    }
+    await pharmacy.save();
+
+    // 2. Update Owner Profile & Password
+    let owner = await User.findOne({ pharmacy: pharmacyId, role: 'Owner' });
+    if (owner) {
+      if (ownerName) owner.name = ownerName;
+      if (ownerEmail && ownerEmail.toLowerCase() !== owner.email) {
+        const existingEmail = await User.findOne({ email: ownerEmail.toLowerCase(), _id: { $ne: owner._id } });
+        if (existingEmail) {
+          return res.status(400).json({ message: `Email ${ownerEmail} is already in use by another user.` });
+        }
+        owner.email = ownerEmail.toLowerCase();
+      }
+      if (ownerPassword && ownerPassword.trim()) {
+        const salt = await bcrypt.genSalt(10);
+        owner.password = await bcrypt.hash(ownerPassword.trim(), salt);
+      }
+      await owner.save();
+    }
+
+    // 3. Extend subscription days if requested
+    if (extendDays && Number(extendDays) > 0) {
+      let sub = await Subscription.findOne({ pharmacy: pharmacyId });
+      if (sub) {
+        const currentExp = sub.expiresAt && sub.expiresAt > new Date() ? sub.expiresAt : new Date();
+        sub.expiresAt = new Date(currentExp.getTime() + Number(extendDays) * 24 * 60 * 60 * 1000);
+        sub.renewalDate = sub.expiresAt;
+        sub.status = 'active';
+        await sub.save();
+      }
+    }
+
+    await AuditLog.create({
+      pharmacy: pharmacyId,
+      branch: req.branchId || null,
+      user: req.userFull._id,
+      userName: req.userFull.name,
+      action: 'COMPANY_UPDATED',
+      module: 'SuperAdmin Control',
+      details: `SuperAdmin updated company details for "${pharmacy.name}".`
+    });
+
+    res.json({
+      message: `Pharmacy "${pharmacy.name}" updated successfully.`,
+      pharmacy,
+      owner: owner ? { id: owner._id, name: owner.name, email: owner.email } : null
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// SuperAdmin Endpoint: Delete/Purge Tenant Company & All Related Data
+export const deleteTenantCompany = async (req, res) => {
+  try {
+    const { pharmacyId } = req.params;
+    const pharmacy = await Pharmacy.findById(pharmacyId);
+    if (!pharmacy) {
+      return res.status(404).json({ message: 'Pharmacy tenant not found' });
+    }
+
+    // Purge related records across collections
+    await Promise.all([
+      Pharmacy.deleteOne({ _id: pharmacyId }),
+      Branch.deleteMany({ pharmacy: pharmacyId }),
+      User.deleteMany({ pharmacy: pharmacyId }),
+      Subscription.deleteMany({ pharmacy: pharmacyId }),
+      Medicine.deleteMany({ pharmacy: pharmacyId })
+    ]);
+
+    await AuditLog.create({
+      pharmacy: pharmacyId,
+      branch: req.branchId || null,
+      user: req.userFull._id,
+      userName: req.userFull.name,
+      action: 'COMPANY_DELETED',
+      module: 'SuperAdmin Control',
+      details: `SuperAdmin purged company tenant "${pharmacy.name}" (${pharmacy.code}).`
+    });
+
+    res.json({ message: `Pharmacy Company "${pharmacy.name}" deleted successfully.` });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 };
 

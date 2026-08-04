@@ -27,9 +27,22 @@ const SuperAdminDashboard = () => {
   const [showNotificationsDropdown, setShowNotificationsDropdown] = useState(false);
 
   // Quick Action & CRUD Modals
-  const [modalType, setModalType] = useState(null); // 'add_company' | 'company_detail' | 'edit_plan' | 'add_coupon' | 'ticket_detail' | 'assign_role' | 'add_category' | 'add_branch'
+  const [modalType, setModalType] = useState(null); // 'add_company' | 'edit_company' | 'company_detail' | 'edit_plan' | 'add_coupon' | 'ticket_detail' | 'assign_role' | 'add_category' | 'add_branch'
   const [selectedItem, setSelectedItem] = useState(null);
   const [companyFormData, setCompanyFormData] = useState({ name: '', code: '', email: '', plan: 'Enterprise' });
+  const [editingCompanyItem, setEditingCompanyItem] = useState(null);
+  const [editCompanyForm, setEditCompanyForm] = useState({
+    pharmacyName: '',
+    pharmacyCode: '',
+    phone: '',
+    address: '',
+    ownerName: '',
+    ownerEmail: '',
+    ownerPassword: '',
+    plan: 'Professional',
+    subscriptionStatus: 'active',
+    extendDays: 0
+  });
   const [couponFormData, setCouponFormData] = useState({ code: '', discountPercent: 15, maxUses: 100, expiryDays: 30 });
   const [categoryFormData, setCategoryFormData] = useState({ name: '', description: '' });
   const [branchFormData, setBranchFormData] = useState({ name: '', code: '', managerName: '', type: 'Branch' });
@@ -129,6 +142,54 @@ const SuperAdminDashboard = () => {
       fetchSuperAdminData();
     } catch (err) {
       alert(err.response?.data?.message || 'Failed to create company');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleOpenEditCompany = (item) => {
+    setEditingCompanyItem(item);
+    setEditCompanyForm({
+      pharmacyName: item.pharmacy?.name || '',
+      pharmacyCode: item.pharmacy?.code || '',
+      phone: item.pharmacy?.phone || '',
+      address: item.pharmacy?.address || '',
+      ownerName: item.owner?.name || '',
+      ownerEmail: item.owner?.email || '',
+      ownerPassword: '',
+      plan: item.pharmacy?.plan || 'Professional',
+      subscriptionStatus: item.pharmacy?.subscriptionStatus || 'active',
+      extendDays: 0
+    });
+    setModalType('edit_company');
+  };
+
+  const handleSaveEditCompany = async (e) => {
+    e.preventDefault();
+    if (!editingCompanyItem) return;
+    try {
+      setActionLoading(true);
+      await API.put(`/subscriptions/admin/company/${editingCompanyItem.pharmacy._id}`, editCompanyForm);
+      showToast(`Company "${editCompanyForm.pharmacyName}" updated successfully!`);
+      setModalType(null);
+      setEditingCompanyItem(null);
+      fetchSuperAdminData();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to update company');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleDeleteCompany = async (item) => {
+    if (!window.confirm(`Are you sure you want to PERMANENTLY DELETE company "${item.pharmacy.name}" (${item.pharmacy.code}) and all its store branches and user accounts? This action cannot be undone.`)) return;
+    try {
+      setActionLoading(true);
+      await API.delete(`/subscriptions/admin/company/${item.pharmacy._id}`);
+      showToast(`Company "${item.pharmacy.name}" deleted successfully.`);
+      fetchSuperAdminData();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to delete company');
     } finally {
       setActionLoading(false);
     }
@@ -568,42 +629,41 @@ const SuperAdminDashboard = () => {
                             <span className="text-blue-400">{item.branchCount} Branches</span> / <span className="text-slate-400">{item.userCount} Users</span>
                           </td>
                           <td className="px-6 py-4">
-                            <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full font-bold text-[11px] ${
-                              item.pharmacy.subscriptionStatus === 'suspended' ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30' :
-                              item.pharmacy.subscriptionStatus === 'active' ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30' :
-                              'bg-red-500/15 text-red-400 border border-red-500/30'
-                            }`}>
-                              {item.pharmacy.subscriptionStatus?.toUpperCase()}
-                            </span>
+                            <div className="space-y-1">
+                              <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full font-bold text-[10px] ${
+                                item.pharmacy.subscriptionStatus === 'suspended' ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30' :
+                                item.pharmacy.subscriptionStatus === 'active' ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30' :
+                                'bg-red-500/15 text-red-400 border border-red-500/30'
+                              }`}>
+                                {item.pharmacy.subscriptionStatus?.toUpperCase()}
+                              </span>
+                              <p className="text-[11px] font-semibold text-purple-300 flex items-center gap-1">
+                                <Clock className="w-3 h-3 text-purple-400 inline shrink-0" />
+                                {item.remainingDays !== undefined ? `${item.remainingDays} Days Left` : '30 Days Left'}
+                              </p>
+                            </div>
                           </td>
-                          <td className="px-6 py-4 text-right space-x-2">
+                          <td className="px-6 py-4 text-right space-x-1.5">
+                            <button
+                              onClick={() => handleOpenEditCompany(item)}
+                              className="px-2.5 py-1 bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 border border-purple-500/30 rounded-lg text-xs font-bold transition cursor-pointer inline-flex items-center gap-1"
+                              title="Edit Company Details & Owner Password"
+                            >
+                              <Edit3 className="w-3.5 h-3.5" /> Edit
+                            </button>
                             <button
                               onClick={() => { setSelectedItem(item); setModalType('company_detail'); }}
-                              className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-bold transition cursor-pointer"
-                              title="View Details"
+                              className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-lg text-xs font-bold transition cursor-pointer inline-flex items-center gap-1"
+                              title="View Complete Company Statistics"
                             >
-                              <Eye className="w-3.5 h-3.5 inline" /> View
+                              <Eye className="w-3.5 h-3.5" /> View
                             </button>
-                            {item.pharmacy.subscriptionStatus === 'suspended' ? (
-                              <button
-                                onClick={() => handleRenewCompany(item.pharmacy._id, item.pharmacy.name)}
-                                className="px-3 py-1 bg-emerald-600/20 text-emerald-300 border border-emerald-500/30 rounded-lg text-xs font-bold cursor-pointer"
-                              >
-                                Reactivate
-                              </button>
-                            ) : (
-                              <button
-                                onClick={() => handleSuspendCompany(item.pharmacy._id, item.pharmacy.name)}
-                                className="px-3 py-1 bg-amber-600/20 text-amber-300 border border-amber-500/30 rounded-lg text-xs font-bold cursor-pointer"
-                              >
-                                Suspend
-                              </button>
-                            )}
                             <button
-                              onClick={() => handleRenewCompany(item.pharmacy._id, item.pharmacy.name)}
-                              className="px-3 py-1 bg-purple-600/20 text-purple-300 border border-purple-500/30 rounded-lg text-xs font-bold cursor-pointer"
+                              onClick={() => handleDeleteCompany(item)}
+                              className="px-2.5 py-1 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 rounded-lg text-xs font-bold transition cursor-pointer inline-flex items-center gap-1"
+                              title="Delete Company Tenant"
                             >
-                              +30 Days
+                              <Trash2 className="w-3.5 h-3.5" /> Delete
                             </button>
                           </td>
                         </tr>
@@ -1103,6 +1163,206 @@ const SuperAdminDashboard = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* EDIT COMPANY MODAL */}
+      {modalType === 'edit_company' && editingCompanyItem && (
+        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4">
+            <div className="flex justify-between items-center border-b border-slate-800 pb-3">
+              <h3 className="text-base font-bold text-white flex items-center gap-2">
+                <Edit3 className="w-5 h-5 text-purple-400" />
+                Edit Company & Owner Credentials
+              </h3>
+              <button onClick={() => { setModalType(null); setEditingCompanyItem(null); }} className="text-slate-400 hover:text-white cursor-pointer"><X className="w-5 h-5" /></button>
+            </div>
+
+            <form onSubmit={handleSaveEditCompany} className="space-y-3.5 text-xs">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-400 font-semibold uppercase text-[10px] mb-1">Company Name *</label>
+                  <input
+                    type="text"
+                    required
+                    value={editCompanyForm.pharmacyName}
+                    onChange={(e) => setEditCompanyForm({ ...editCompanyForm, pharmacyName: e.target.value })}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-slate-400 font-semibold uppercase text-[10px] mb-1">Company Code *</label>
+                  <input
+                    type="text"
+                    required
+                    value={editCompanyForm.pharmacyCode}
+                    onChange={(e) => setEditCompanyForm({ ...editCompanyForm, pharmacyCode: e.target.value.toUpperCase() })}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white font-mono uppercase"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-400 font-semibold uppercase text-[10px] mb-1">Owner Full Name *</label>
+                  <input
+                    type="text"
+                    required
+                    value={editCompanyForm.ownerName}
+                    onChange={(e) => setEditCompanyForm({ ...editCompanyForm, ownerName: e.target.value })}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-slate-400 font-semibold uppercase text-[10px] mb-1">Owner Email Address *</label>
+                  <input
+                    type="email"
+                    required
+                    value={editCompanyForm.ownerEmail}
+                    onChange={(e) => setEditCompanyForm({ ...editCompanyForm, ownerEmail: e.target.value })}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white font-mono"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-slate-400 font-semibold uppercase text-[10px] mb-1 flex items-center gap-1">
+                  <Lock className="w-3.5 h-3.5 text-amber-400" /> Reset Owner Password (Optional)
+                </label>
+                <input
+                  type="password"
+                  placeholder="Enter new password to change owner password, or leave blank"
+                  value={editCompanyForm.ownerPassword}
+                  onChange={(e) => setEditCompanyForm({ ...editCompanyForm, ownerPassword: e.target.value })}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white"
+                />
+              </div>
+
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-slate-400 font-semibold uppercase text-[10px] mb-1">Plan Tier</label>
+                  <select
+                    value={editCompanyForm.plan}
+                    onChange={(e) => setEditCompanyForm({ ...editCompanyForm, plan: e.target.value })}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white font-bold"
+                  >
+                    <option value="Starter">Starter ($99/mo)</option>
+                    <option value="Professional">Professional ($299/mo)</option>
+                    <option value="Enterprise">Enterprise ($799/mo)</option>
+                    <option value="Unlimited">Unlimited ($1,499/mo)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-slate-400 font-semibold uppercase text-[10px] mb-1">Status</label>
+                  <select
+                    value={editCompanyForm.subscriptionStatus}
+                    onChange={(e) => setEditCompanyForm({ ...editCompanyForm, subscriptionStatus: e.target.value })}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white font-bold"
+                  >
+                    <option value="active">Active</option>
+                    <option value="suspended">Suspended</option>
+                    <option value="expired">Expired</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-slate-400 font-semibold uppercase text-[10px] mb-1">Extend Access</label>
+                  <select
+                    value={editCompanyForm.extendDays}
+                    onChange={(e) => setEditCompanyForm({ ...editCompanyForm, extendDays: Number(e.target.value) })}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-purple-300 font-bold"
+                  >
+                    <option value={0}>No Extension</option>
+                    <option value={30}>+30 Days</option>
+                    <option value={60}>+60 Days</option>
+                    <option value={90}>+90 Days</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="flex gap-3 pt-3 border-t border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => { setModalType(null); setEditingCompanyItem(null); }}
+                  className="flex-1 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl font-bold transition cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={actionLoading}
+                  className="flex-1 py-2.5 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white rounded-xl font-bold transition flex items-center justify-center gap-2 cursor-pointer shadow-md"
+                >
+                  {actionLoading ? <RefreshCw className="w-4 h-4 animate-spin" /> : 'Save Changes'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* VIEW COMPANY STATISTICS DETAIL MODAL */}
+      {modalType === 'company_detail' && selectedItem && (
+        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4">
+            <div className="flex justify-between items-center border-b border-slate-800 pb-3">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-purple-500/10 border border-purple-500/20 rounded-xl flex items-center justify-center text-purple-400 font-bold text-sm">
+                  {selectedItem.pharmacy.code?.slice(0, 3) || 'ERP'}
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-white">{selectedItem.pharmacy.name}</h3>
+                  <p className="text-xs text-slate-400">Code: {selectedItem.pharmacy.code}</p>
+                </div>
+              </div>
+              <button onClick={() => { setModalType(null); setSelectedItem(null); }} className="text-slate-400 hover:text-white cursor-pointer"><X className="w-5 h-5" /></button>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 text-xs">
+              <div className="bg-slate-950 border border-slate-800 p-3 rounded-xl space-y-1">
+                <span className="text-slate-500 uppercase font-semibold text-[10px]">Company Owner</span>
+                <p className="text-white font-bold">{selectedItem.owner?.name}</p>
+                <p className="text-purple-400 font-mono">{selectedItem.owner?.email}</p>
+              </div>
+
+              <div className="bg-slate-950 border border-slate-800 p-3 rounded-xl space-y-1">
+                <span className="text-slate-500 uppercase font-semibold text-[10px]">Subscription Plan</span>
+                <p className="text-white font-bold">{selectedItem.pharmacy.plan || 'Professional'}</p>
+                <p className="text-emerald-400 font-semibold">Status: {selectedItem.pharmacy.subscriptionStatus?.toUpperCase()}</p>
+              </div>
+
+              <div className="bg-slate-950 border border-slate-800 p-3 rounded-xl space-y-1">
+                <span className="text-slate-500 uppercase font-semibold text-[10px]">Outlets & Staff</span>
+                <p className="text-blue-400 font-bold">{selectedItem.branchCount} Active Branches</p>
+                <p className="text-slate-300 font-bold">{selectedItem.userCount} Total Users</p>
+              </div>
+
+              <div className="bg-slate-950 border border-slate-800 p-3 rounded-xl space-y-1">
+                <span className="text-slate-500 uppercase font-semibold text-[10px]">Access Expiration</span>
+                <p className="text-purple-300 font-bold flex items-center gap-1">
+                  <Clock className="w-3.5 h-3.5 text-purple-400" />
+                  {selectedItem.remainingDays !== undefined ? `${selectedItem.remainingDays} Days Left` : '30 Days Left'}
+                </p>
+                <p className="text-slate-400 text-[10px]">{selectedItem.expiryDateFormatted ? `Expires: ${selectedItem.expiryDateFormatted}` : ''}</p>
+              </div>
+            </div>
+
+            <div className="flex gap-2 pt-2 border-t border-slate-800">
+              <button
+                onClick={() => handleOpenEditCompany(selectedItem)}
+                className="flex-1 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer"
+              >
+                <Edit3 className="w-3.5 h-3.5" /> Edit Credentials
+              </button>
+              <button
+                onClick={() => handleDeleteCompany(selectedItem)}
+                className="py-2 px-4 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer"
+              >
+                <Trash2 className="w-3.5 h-3.5" /> Delete Company
+              </button>
+            </div>
           </div>
         </div>
       )}
