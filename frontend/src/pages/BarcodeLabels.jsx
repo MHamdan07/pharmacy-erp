@@ -2,11 +2,14 @@ import { useState, useEffect, useCallback } from 'react';
 import API from '../api/axios';
 import {
   Barcode, QrCode, Printer, Search, Tag, Layers, Pill,
-  CheckCircle, Camera, RefreshCw, Box, Layers3, Sparkles
+  CheckCircle, Camera, RefreshCw, Box, Sparkles
 } from 'lucide-react';
+import { Button, Input, Select, Card, Badge, Skeleton, useToast } from '../components/ui';
 
 const BarcodeLabels = () => {
+  const toast = useToast();
   const [medicines, setMedicines] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedMed, setSelectedMed] = useState(null);
 
@@ -16,152 +19,216 @@ const BarcodeLabels = () => {
   const [isScanning, setIsScanning] = useState(false);
 
   const fetchMedicines = useCallback(async () => {
+    setLoading(true);
     try {
       const res = await API.get('/inventory/medicines');
-      setMedicines(res.data || []);
-      if (res.data?.length > 0) {
-        setSelectedMed(res.data[0]);
+      const data = res.data || [];
+      setMedicines(data);
+      if (data.length > 0) {
+        setSelectedMed(data[0]);
       }
     } catch (err) {
       console.error('Failed to load medicines for barcode labeling:', err);
+      toast.error('Failed to load medicines list for barcode generation.');
+    } finally {
+      setLoading(false);
     }
-  }, []);
+  }, [toast]);
 
   useEffect(() => {
     fetchMedicines();
   }, [fetchMedicines]);
 
   const handlePrintLabels = () => {
-    window.print();
+    if (!selectedMed) {
+      toast.warning('Please select a medicine before printing labels.');
+      return;
+    }
+    toast.info(`Sending ${stickerCopies} copies to printer...`);
+    setTimeout(() => {
+      window.print();
+    }, 300);
+  };
+
+  const toggleScanner = () => {
+    const nextState = !isScanning;
+    setIsScanning(nextState);
+    if (nextState) {
+      toast.info('Live QR/Barcode scanner initialized.');
+    } else {
+      toast.info('Scanner camera deactivated.');
+    }
   };
 
   const filteredMedicines = medicines.filter((m) =>
-    m.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    m.sku.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    m.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    m.sku?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (m.barcode && m.barcode.includes(searchTerm))
   );
 
   return (
     <div className="space-y-6">
 
-      {/* Top Banner */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-900 border border-slate-800 p-5 rounded-2xl shadow-md">
-        <div>
-          <h1 className="text-xl font-bold text-white flex items-center gap-2">
-            <Barcode className="w-6 h-6 text-amber-400" />
-            Barcode & QR Code Printing, Sticker Labels & Shelf Cards
-          </h1>
-          <p className="text-xs text-slate-400">Generate, scan, and print thermal barcode stickers, QR code labels, and shelf cards with rack locations</p>
-        </div>
+      {/* Top Banner Header */}
+      <Card variant="solid" className="p-5 border-slate-800 dark:border-slate-800 light:border-slate-200">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-xl font-bold text-slate-100 dark:text-slate-100 light:text-slate-900 flex items-center gap-2 tracking-tight">
+              <Barcode className="w-6 h-6 text-amber-400" />
+              Barcode & QR Code Printing, Sticker Labels & Shelf Cards
+            </h1>
+            <p className="text-xs text-slate-400 dark:text-slate-400 light:text-slate-500 mt-1">
+              Generate, scan, and print thermal barcode stickers, QR code labels, and shelf cards with rack locations
+            </p>
+          </div>
 
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setIsScanning(!isScanning)}
-            className="bg-purple-600 hover:bg-purple-500 text-white text-xs font-semibold px-4 py-2.5 rounded-xl flex items-center gap-1.5 cursor-pointer shadow-md"
-          >
-            <Camera className="w-4 h-4" /> {isScanning ? 'Close Live Scanner' : 'Launch QR/Barcode Scanner'}
-          </button>
-          <button
-            onClick={handlePrintLabels}
-            className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold px-4 py-2.5 rounded-xl flex items-center gap-1.5 cursor-pointer shadow-md"
-          >
-            <Printer className="w-4 h-4" /> Print Sticker Labels ({stickerCopies} Copies)
-          </button>
+          <div className="flex items-center gap-2.5 shrink-0">
+            <Button
+              variant={isScanning ? 'danger' : 'secondary'}
+              size="sm"
+              leftIcon={Camera}
+              onClick={toggleScanner}
+            >
+              {isScanning ? 'Close Live Scanner' : 'Launch QR/Barcode Scanner'}
+            </Button>
+            <Button
+              variant="primary"
+              size="sm"
+              leftIcon={Printer}
+              onClick={handlePrintLabels}
+              disabled={!selectedMed}
+              className="bg-emerald-600 hover:bg-emerald-500 text-white"
+            >
+              Print Sticker Labels ({stickerCopies} Copies)
+            </Button>
+          </div>
         </div>
-      </div>
+      </Card>
 
       {/* Camera / Scanner Simulation */}
       {isScanning && (
-        <div className="bg-slate-900 border border-purple-500/50 p-6 rounded-2xl shadow-xl text-center space-y-3">
+        <Card variant="solid" className="border-purple-500/50 p-6 text-center space-y-3">
           <div className="mx-auto w-16 h-16 bg-purple-500/10 text-purple-400 rounded-full flex items-center justify-center border border-purple-500/30 animate-pulse">
             <Camera className="w-8 h-8" />
           </div>
-          <h3 className="text-base font-bold text-white">Live Camera / Handheld Scanner Active</h3>
-          <p className="text-xs text-slate-400 max-w-md mx-auto">Point barcode reader or camera at product barcode/QR code for instant item lookup and POS cart insertion.</p>
-        </div>
+          <h3 className="text-base font-bold text-slate-100 dark:text-slate-100 light:text-slate-900">
+            Live Camera / Handheld Scanner Active
+          </h3>
+          <p className="text-xs text-slate-400 dark:text-slate-400 light:text-slate-500 max-w-md mx-auto">
+            Point barcode reader or camera at product barcode/QR code for instant item lookup and POS cart insertion.
+          </p>
+        </Card>
       )}
 
       {/* Main Grid: Selection & Label Generator Studio */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
 
         {/* Left: Product Selector (5 cols) */}
-        <div className="lg:col-span-5 bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
-          <div className="relative">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
-            <input
-              type="text"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Search Medicine by Name, SKU, Barcode..."
-              className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none"
-            />
+        <Card variant="solid" className="lg:col-span-5 p-5 space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-bold text-slate-200 dark:text-slate-200 light:text-slate-800 flex items-center gap-2">
+              <Pill className="w-4 h-4 text-blue-400" /> Select Medicine
+            </h2>
+            <Badge variant="neutral" size="sm">
+              {filteredMedicines.length} Items
+            </Badge>
           </div>
+
+          <Input
+            type="text"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder="Search Medicine by Name, SKU, Barcode..."
+            leftIcon={Search}
+            size="sm"
+          />
 
           <div className="space-y-2 max-h-[500px] overflow-y-auto pr-1">
-            {filteredMedicines.map((med) => {
-              const isSelected = selectedMed?._id === med._id;
-              return (
-                <div
-                  key={med._id}
-                  onClick={() => setSelectedMed(med)}
-                  className={`p-3 rounded-xl border transition-all cursor-pointer flex justify-between items-center text-xs ${
-                    isSelected
-                      ? 'bg-blue-600/20 border-blue-500 text-white font-bold'
-                      : 'bg-slate-800/40 border-slate-700/60 text-slate-300 hover:bg-slate-800'
-                  }`}
-                >
-                  <div>
-                    <div className="font-bold text-white text-sm">{med.name}</div>
-                    <div className="text-[10px] text-slate-400 font-mono">SKU: {med.sku} · Barcode: {med.barcode || med.sku}</div>
+            {loading ? (
+              <div className="space-y-2 p-2">
+                <Skeleton className="h-14 w-full rounded-xl" />
+                <Skeleton className="h-14 w-full rounded-xl" />
+                <Skeleton className="h-14 w-full rounded-xl" />
+                <Skeleton className="h-14 w-full rounded-xl" />
+              </div>
+            ) : filteredMedicines.length > 0 ? (
+              filteredMedicines.map((med) => {
+                const isSelected = selectedMed?._id === med._id;
+                return (
+                  <div
+                    key={med._id}
+                    onClick={() => setSelectedMed(med)}
+                    className={`p-3 rounded-xl border transition-all cursor-pointer flex justify-between items-center text-xs ${
+                      isSelected
+                        ? 'bg-blue-600/20 border-blue-500 text-white font-bold shadow-md'
+                        : 'bg-slate-800/40 dark:bg-slate-800/40 light:bg-slate-50 border-slate-700/60 dark:border-slate-700/60 light:border-slate-200 text-slate-300 dark:text-slate-300 light:text-slate-700 hover:bg-slate-800'
+                    }`}
+                  >
+                    <div>
+                      <div className="font-bold text-slate-100 dark:text-slate-100 light:text-slate-900 text-sm">
+                        {med.name}
+                      </div>
+                      <div className="text-[10px] text-slate-400 font-mono">
+                        SKU: {med.sku} · Barcode: {med.barcode || med.sku}
+                      </div>
+                    </div>
+                    <span className="text-emerald-400 font-bold font-mono">
+                      ${med.unitPrice?.toFixed(2)}
+                    </span>
                   </div>
-                  <span className="text-emerald-400 font-bold font-mono">${med.unitPrice?.toFixed(2)}</span>
-                </div>
-              );
-            })}
+                );
+              })
+            ) : (
+              <div className="p-8 text-center text-xs text-slate-400">
+                No medicines match search terms.
+              </div>
+            )}
           </div>
-        </div>
+        </Card>
 
         {/* Right: Label Print Studio & Live Preview (7 cols) */}
-        <div className="lg:col-span-7 bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-6">
+        <Card variant="solid" className="lg:col-span-7 p-5 space-y-6">
 
-          {/* Label Type Selector */}
-          <div className="flex justify-between items-center border-b border-slate-800 pb-3">
-            <div className="flex gap-2 text-xs font-bold">
-              <button
+          {/* Label Type Selector Controls */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 dark:border-slate-800 light:border-slate-200 pb-4">
+            <div className="flex flex-wrap gap-2">
+              <Button
+                variant={labelType === 'shelf' ? 'primary' : 'outline'}
+                size="sm"
                 onClick={() => setLabelType('shelf')}
-                className={`px-3 py-1.5 rounded-lg border transition-all cursor-pointer ${
-                  labelType === 'shelf' ? 'bg-amber-600 border-amber-500 text-white' : 'bg-slate-800 border-slate-700 text-slate-400'
-                }`}
+                className={labelType === 'shelf' ? 'bg-amber-600 hover:bg-amber-500 border-amber-500 text-white' : ''}
               >
                 Shelf Label Card
-              </button>
-              <button
+              </Button>
+              <Button
+                variant={labelType === 'barcode_sticker' ? 'primary' : 'outline'}
+                size="sm"
                 onClick={() => setLabelType('barcode_sticker')}
-                className={`px-3 py-1.5 rounded-lg border transition-all cursor-pointer ${
-                  labelType === 'barcode_sticker' ? 'bg-amber-600 border-amber-500 text-white' : 'bg-slate-800 border-slate-700 text-slate-400'
-                }`}
+                className={labelType === 'barcode_sticker' ? 'bg-amber-600 hover:bg-amber-500 border-amber-500 text-white' : ''}
               >
                 Barcode Sticker Label
-              </button>
-              <button
+              </Button>
+              <Button
+                variant={labelType === 'qr_label' ? 'primary' : 'outline'}
+                size="sm"
                 onClick={() => setLabelType('qr_label')}
-                className={`px-3 py-1.5 rounded-lg border transition-all cursor-pointer ${
-                  labelType === 'qr_label' ? 'bg-amber-600 border-amber-500 text-white' : 'bg-slate-800 border-slate-700 text-slate-400'
-                }`}
+                className={labelType === 'qr_label' ? 'bg-amber-600 hover:bg-amber-500 border-amber-500 text-white' : ''}
               >
                 QR Verification Tag
-              </button>
+              </Button>
             </div>
 
             <div className="flex items-center gap-2 text-xs">
-              <span className="text-slate-400">Copies to Print:</span>
-              <input
+              <span className="text-slate-400 font-medium">Copies to Print:</span>
+              <Input
                 type="number"
                 min="1"
                 max="100"
                 value={stickerCopies}
                 onChange={(e) => setStickerCopies(Math.max(1, Number(e.target.value)))}
-                className="w-16 bg-slate-800 border border-slate-700 rounded px-2 py-1 text-white font-mono text-center font-bold"
+                size="sm"
+                className="w-20 font-mono text-center font-bold"
+                fullWidth={false}
               />
             </div>
           </div>
@@ -169,7 +236,14 @@ const BarcodeLabels = () => {
           {/* Live Printable Preview Container */}
           {selectedMed ? (
             <div className="space-y-4">
-              <div className="text-xs text-slate-400 font-bold uppercase tracking-wider">Live Sticker / Shelf Card Preview:</div>
+              <div className="flex items-center justify-between">
+                <div className="text-xs text-slate-400 font-bold uppercase tracking-wider">
+                  Live Sticker / Shelf Card Preview
+                </div>
+                <Badge variant="info" size="sm" icon={Sparkles}>
+                  {labelType === 'shelf' ? 'Standard Thermal Shelf Card' : labelType === 'barcode_sticker' ? 'Thermal Roll Sticker' : '2D Matrix QR Code'}
+                </Badge>
+              </div>
 
               {/* 1. SHELF LABEL CARD PREVIEW */}
               {labelType === 'shelf' && (
@@ -246,18 +320,35 @@ const BarcodeLabels = () => {
               )}
             </div>
           ) : (
-            <div className="text-center py-12 text-slate-500 text-xs italic">
+            <div className="text-center py-16 text-slate-500 text-xs italic">
               Select a medicine from the left list to generate sticker labels and shelf cards.
             </div>
           )}
 
-        </div>
+        </Card>
 
       </div>
 
       {/* PRINT-ONLY STICKER LABELS SHEET CONTAINER (ONLY VISIBLE DURING PRINT) */}
       {selectedMed && (
         <div className="printable-label-sheet hidden font-mono text-black">
+          <style>{`
+            @media print {
+              body * {
+                visibility: hidden;
+              }
+              .printable-label-sheet, .printable-label-sheet * {
+                visibility: visible;
+              }
+              .printable-label-sheet {
+                display: block !important;
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+              }
+            }
+          `}</style>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3 p-2">
             {Array.from({ length: stickerCopies }).map((_, idx) => (
               <div key={idx} className="border border-black p-3 rounded text-[10px] text-center space-y-1 bg-white break-inside-avoid">
@@ -311,3 +402,4 @@ const BarcodeLabels = () => {
 };
 
 export default BarcodeLabels;
+

@@ -1,42 +1,53 @@
 import { useState, useEffect, useCallback } from 'react';
 import API from '../api/axios';
 import { useAuth } from '../context/AuthContext';
-import { Building2, UserPlus, Shield, Store, Plus, Check, Edit, Trash2, ShieldAlert, CreditCard } from 'lucide-react';
+import {
+  Building2,
+  UserPlus,
+  Shield,
+  Store,
+  Plus,
+  Edit,
+  Trash2,
+  ShieldAlert,
+  CreditCard,
+  Mail,
+  UserCheck
+} from 'lucide-react';
 import { Link } from 'react-router-dom';
+import {
+  DataTable,
+  Input,
+  Select,
+  Badge,
+  StatusDot,
+  Button,
+  Modal,
+  Skeleton,
+  useToast
+} from '../components/ui';
 
 const BranchUserManagement = () => {
   const { user } = useAuth();
+  const toast = useToast();
   const isCompanyOwner = user?.role === 'Owner';
+
   const [branches, setBranches] = useState([]);
   const [users, setUsers] = useState([]);
   const [subscription, setSubscription] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  // Modals visibility
   const [showBranchModal, setShowBranchModal] = useState(false);
   const [showUserModal, setShowUserModal] = useState(false);
-
-  // Edit Branch State
-  const [editingBranch, setEditingBranch] = useState(null);
   const [showEditBranchModal, setShowEditBranchModal] = useState(false);
-  const [editBranchForm, setEditBranchForm] = useState({
-    name: '',
-    code: '',
-    phone: '',
-    address: '',
-    receiptHeader: '',
-    receiptFooter: ''
-  });
+  const [showEditUserModal, setShowEditUserModal] = useState(false);
 
-  // Edit Staff State
+  const [editingBranch, setEditingBranch] = useState(null);
   const [editingUser, setEditingUser] = useState(null);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [editUserForm, setEditUserForm] = useState({
-    name: '',
-    email: '',
-    role: 'Pharmacist',
-    branchId: '',
-    isActive: true
-  });
+  const [submitting, setSubmitting] = useState(false);
 
-  // New Branch Form
+  // Forms
   const [branchForm, setBranchForm] = useState({
     name: '',
     code: '',
@@ -46,7 +57,15 @@ const BranchUserManagement = () => {
     receiptFooter: 'Get well soon!'
   });
 
-  // New Staff User Form
+  const [editBranchForm, setEditBranchForm] = useState({
+    name: '',
+    code: '',
+    phone: '',
+    address: '',
+    receiptHeader: '',
+    receiptFooter: ''
+  });
+
   const [userForm, setUserForm] = useState({
     name: '',
     email: '',
@@ -56,14 +75,23 @@ const BranchUserManagement = () => {
     branchId: ''
   });
 
+  const [editUserForm, setEditUserForm] = useState({
+    name: '',
+    email: '',
+    role: 'Pharmacist',
+    branchId: '',
+    isActive: true
+  });
+
   const fetchBranches = useCallback(async () => {
     try {
       const res = await API.get('/tenants/branches');
       setBranches(res.data || []);
     } catch (err) {
       console.error('Failed to fetch branches:', err);
+      toast.error('Failed to load branch stores');
     }
-  }, []);
+  }, [toast]);
 
   const fetchUsers = useCallback(async () => {
     try {
@@ -71,8 +99,9 @@ const BranchUserManagement = () => {
       setUsers(res.data || []);
     } catch (err) {
       console.error('Failed to fetch users:', err);
+      toast.error('Failed to load staff roster');
     }
-  }, []);
+  }, [toast]);
 
   const fetchSubscription = useCallback(async () => {
     try {
@@ -83,505 +112,676 @@ const BranchUserManagement = () => {
     }
   }, []);
 
-  useEffect(() => {
-    if (isCompanyOwner) {
-      fetchBranches();
-      fetchUsers();
-      fetchSubscription();
-    }
+  const loadData = useCallback(async () => {
+    if (!isCompanyOwner) return;
+    setLoading(true);
+    await Promise.allSettled([fetchBranches(), fetchUsers(), fetchSubscription()]);
+    setLoading(false);
   }, [isCompanyOwner, fetchBranches, fetchUsers, fetchSubscription]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  // Branch Action Handlers
+  const handleOpenCreateBranch = () => {
+    setBranchForm({
+      name: '',
+      code: '',
+      phone: '',
+      address: '',
+      receiptHeader: 'Thank you for visiting!',
+      receiptFooter: 'Get well soon!'
+    });
+    setShowBranchModal(true);
+  };
+
+  const handleCreateBranch = async (e) => {
+    e.preventDefault();
+    setSubmitting(true);
+    try {
+      await API.post('/tenants/branches', branchForm);
+      toast.success(`Branch store "${branchForm.name}" created successfully!`);
+      setShowBranchModal(false);
+      fetchBranches();
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to onboard branch store');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleOpenEditBranch = (b) => {
+    setEditingBranch(b);
+    setEditBranchForm({
+      name: b.name || '',
+      code: b.code || '',
+      phone: b.phone || '',
+      address: b.address || '',
+      receiptHeader: b.receiptHeader || '',
+      receiptFooter: b.receiptFooter || ''
+    });
+    setShowEditBranchModal(true);
+  };
+
+  const handleSaveEditBranch = async (e) => {
+    e.preventDefault();
+    if (!editingBranch) return;
+    setSubmitting(true);
+    try {
+      await API.put(`/tenants/branches/${editingBranch._id}`, editBranchForm);
+      toast.success(`Branch store "${editBranchForm.name}" updated successfully!`);
+      setShowEditBranchModal(false);
+      fetchBranches();
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to update branch store');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleDeleteBranch = async (branchId, branchName) => {
+    const confirmed = await toast.confirm({
+      title: 'Delete Branch Store',
+      message: `Are you sure you want to delete branch "${branchName}"? This action cannot be undone.`,
+      confirmText: 'Delete Branch',
+      cancelText: 'Cancel',
+      variant: 'danger'
+    });
+
+    if (!confirmed) return;
+
+    try {
+      await API.delete(`/tenants/branches/${branchId}`);
+      toast.success(`Branch store "${branchName}" deleted.`);
+      setShowEditBranchModal(false);
+      fetchBranches();
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to delete branch store');
+    }
+  };
+
+  // Staff User Action Handlers
+  const handleOpenCreateUser = () => {
+    setUserForm({
+      name: '',
+      email: '',
+      password: 'password123',
+      role: 'Pharmacist',
+      phone: '',
+      branchId: branches[0]?._id || ''
+    });
+    setShowUserModal(true);
+  };
+
+  const handleCreateUser = async (e) => {
+    e.preventDefault();
+    setSubmitting(true);
+    try {
+      await API.post('/auth/register', userForm);
+      toast.success(`Staff member "${userForm.name}" invited successfully!`);
+      setShowUserModal(false);
+      fetchUsers();
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to invite staff member');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleOpenEditUser = (u) => {
+    setEditingUser(u);
+    setEditUserForm({
+      name: u.name || '',
+      email: u.email || '',
+      role: u.role || 'Pharmacist',
+      branchId: u.branch?._id || u.branch || '',
+      isActive: u.isActive !== false
+    });
+    setShowEditUserModal(true);
+  };
+
+  const handleSaveEditUser = async (e) => {
+    e.preventDefault();
+    if (!editingUser) return;
+    setSubmitting(true);
+    try {
+      await API.put(`/auth/users/${editingUser._id}`, editUserForm);
+      toast.success(`Staff user "${editUserForm.name}" updated successfully!`);
+      setShowEditUserModal(false);
+      fetchUsers();
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to update staff user');
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   if (!isCompanyOwner) {
     return (
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-8 text-center max-w-lg mx-auto mt-12 shadow-2xl space-y-4">
+      <div className="bg-slate-900/90 dark:bg-slate-900/90 light:bg-white border border-slate-800 dark:border-slate-800 light:border-slate-200 rounded-2xl p-8 text-center max-w-lg mx-auto mt-12 shadow-2xl space-y-4">
         <ShieldAlert className="w-12 h-12 text-rose-500 mx-auto" />
-        <h2 className="text-lg font-bold text-white">Access Restricted to Company Owner</h2>
-        <p className="text-xs text-slate-400">
+        <h2 className="text-lg font-bold text-slate-100 dark:text-slate-100 light:text-slate-900">
+          Access Restricted to Company Owner
+        </h2>
+        <p className="text-xs text-slate-400 dark:text-slate-400 light:text-slate-500">
           Multi-branch store administration and staff management can only be accessed by the Company Owner.
         </p>
       </div>
     );
   }
 
-  const planMaxBranches = subscription?.planName === 'Starter' ? 1 : subscription?.planName === 'Enterprise' ? 10 : 3;
+  const planMaxBranches =
+    subscription?.planName === 'Starter'
+      ? 1
+      : subscription?.planName === 'Enterprise'
+      ? 10
+      : 3;
+
+  const staffColumns = [
+    {
+      header: 'Staff Member',
+      accessor: 'name',
+      render: (row) => (
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 font-bold shrink-0 text-xs">
+            {row.name ? row.name.charAt(0).toUpperCase() : 'U'}
+          </div>
+          <span className="font-bold text-slate-100 dark:text-slate-100 light:text-slate-900">
+            {row.name}
+          </span>
+        </div>
+      )
+    },
+    {
+      header: 'Email Address',
+      accessor: 'email',
+      render: (row) => <span className="font-mono text-blue-400 text-xs">{row.email}</span>
+    },
+    {
+      header: 'Assigned Role',
+      accessor: 'role',
+      render: (row) => {
+        const roleVariant =
+          row.role === 'Owner'
+            ? 'purple'
+            : row.role === 'Admin'
+            ? 'info'
+            : row.role === 'Pharmacist'
+            ? 'success'
+            : row.role === 'Branch Manager'
+            ? 'warning'
+            : 'neutral';
+        return <Badge variant={roleVariant} size="sm">{row.role}</Badge>;
+      }
+    },
+    {
+      header: 'Assigned Branch',
+      render: (row) => (
+        <span className="text-slate-300 dark:text-slate-300 light:text-slate-700 text-xs">
+          {row.branch?.name || 'All Branches'}
+        </span>
+      )
+    },
+    {
+      header: 'Status',
+      render: (row) => {
+        const active = row.isActive !== false;
+        return (
+          <Badge variant={active ? 'success' : 'danger'} size="sm" dot>
+            {active ? 'Active' : 'Suspended'}
+          </Badge>
+        );
+      }
+    },
+    {
+      header: 'Actions',
+      className: 'text-right',
+      render: (row) => (
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => handleOpenEditUser(row)}
+          className="ml-auto"
+        >
+          <Edit className="w-3.5 h-3.5 mr-1" /> Edit
+        </Button>
+      )
+    }
+  ];
 
   return (
     <div className="space-y-6">
-
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-900 border border-slate-800 p-5 rounded-2xl shadow-md">
+      {/* Header Banner */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-900/90 dark:bg-slate-900/90 light:bg-white border border-slate-800 dark:border-slate-800 light:border-slate-200 p-5 rounded-2xl shadow-xl">
         <div>
-          <h1 className="text-xl font-bold text-white flex items-center gap-2">
+          <h1 className="text-xl font-bold text-slate-100 dark:text-slate-100 light:text-slate-900 flex items-center gap-2">
             <Building2 className="w-6 h-6 text-blue-400" />
             Branch Stores & Staff Role Administration
           </h1>
-          <p className="text-xs text-slate-400">
-            Current Plan: <span className="text-blue-400 font-bold">{subscription?.planName || 'Professional'}</span> ({branches.length} / {planMaxBranches} Branches Used)
+          <p className="text-xs text-slate-400 dark:text-slate-400 light:text-slate-500 mt-0.5">
+            Current Plan:{' '}
+            <span className="text-blue-400 font-bold">
+              {subscription?.planName || 'Professional'}
+            </span>{' '}
+            ({branches.length} / {planMaxBranches} Branches Used)
           </p>
         </div>
 
         <div className="flex items-center gap-2">
           {branches.length >= planMaxBranches ? (
-            <Link
-              to="/settings/subscription"
-              className="bg-amber-600 hover:bg-amber-500 text-white text-xs font-semibold px-4 py-2.5 rounded-xl shadow-md flex items-center gap-1.5 cursor-pointer"
-            >
-              <CreditCard className="w-4 h-4" /> Upgrade Plan to Add Branch
+            <Link to="/settings/subscription">
+              <Button variant="warning" size="sm">
+                <CreditCard className="w-4 h-4 mr-1.5" /> Upgrade Plan to Add Branch
+              </Button>
             </Link>
           ) : (
-            <button
-              onClick={() => setShowBranchModal(true)}
-              className="bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold px-4 py-2.5 rounded-xl shadow-md flex items-center gap-1.5 cursor-pointer"
-            >
-              <Plus className="w-4 h-4" /> Add Branch Location
-            </button>
+            <Button variant="primary" size="sm" onClick={handleOpenCreateBranch}>
+              <Plus className="w-4 h-4 mr-1.5" /> Add Branch Location
+            </Button>
           )}
-          <button
-            onClick={() => setShowUserModal(true)}
-            className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold px-4 py-2.5 rounded-xl shadow-md flex items-center gap-1.5 cursor-pointer"
-          >
-            <UserPlus className="w-4 h-4" /> Invite Staff Member
-          </button>
+          <Button variant="success" size="sm" onClick={handleOpenCreateUser}>
+            <UserPlus className="w-4 h-4 mr-1.5" /> Invite Staff Member
+          </Button>
         </div>
       </div>
 
-      {/* Branch Stores Grid with EDIT & DELETE ACTIONS */}
+      {/* Branch Stores Cards Grid */}
       <div>
-        <h2 className="text-md font-bold text-white mb-3">Onboarded Branch Stores ({branches.length})</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {branches.map((b) => (
-            <div key={b._id} className="bg-slate-900 border border-slate-800 p-5 rounded-2xl shadow-lg space-y-3 relative group">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <Store className="w-5 h-5 text-emerald-400 shrink-0" />
-                  <h3 className="font-bold text-white text-md truncate max-w-[150px]">{b.name}</h3>
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-md font-bold text-slate-100 dark:text-slate-100 light:text-slate-900">
+            Onboarded Branch Stores ({branches.length})
+          </h2>
+        </div>
+
+        {loading ? (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Skeleton.Card />
+            <Skeleton.Card />
+            <Skeleton.Card />
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {branches.map((b) => (
+              <div
+                key={b._id}
+                className="bg-slate-900/80 dark:bg-slate-900/80 light:bg-white border border-slate-800 dark:border-slate-800 light:border-slate-200 p-5 rounded-2xl shadow-lg space-y-3 relative group"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2 min-w-0">
+                    <Store className="w-5 h-5 text-emerald-400 shrink-0" />
+                    <h3 className="font-bold text-slate-100 dark:text-slate-100 light:text-slate-900 text-sm truncate">
+                      {b.name}
+                    </h3>
+                  </div>
+
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <Badge variant="info" size="sm">
+                      {b.code}
+                    </Badge>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleOpenEditBranch(b)}
+                      title="Edit Branch Store"
+                    >
+                      <Edit className="w-3.5 h-3.5 text-blue-400" />
+                    </Button>
+                    {!b.isHeadquarter && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDeleteBranch(b._id, b.name)}
+                        title="Delete Branch Store"
+                      >
+                        <Trash2 className="w-3.5 h-3.5 text-rose-400" />
+                      </Button>
+                    )}
+                  </div>
                 </div>
 
-                <div className="flex items-center gap-1.5">
-                  <span className="bg-slate-800 text-blue-400 border border-slate-700 font-mono font-bold px-2 py-0.5 rounded text-xs">
-                    {b.code}
-                  </span>
-                  <button
-                    onClick={() => handleOpenEditBranch(b)}
-                    className="p-1.5 text-blue-400 hover:bg-slate-800 rounded-lg cursor-pointer transition-all border border-slate-700/60"
-                    title="Edit Branch Store"
-                  >
-                    <Edit className="w-3.5 h-3.5" />
-                  </button>
-                  {!b.isHeadquarter && (
-                    <button
-                      onClick={() => handleDeleteBranch(b._id, b.name)}
-                      className="p-1.5 text-rose-400 hover:bg-slate-800 rounded-lg cursor-pointer transition-all border border-slate-700/60"
-                      title="Delete Branch Store"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
+                <div className="text-xs text-slate-400 dark:text-slate-400 light:text-slate-600 space-y-1 pt-2 border-t border-slate-800/80 dark:border-slate-800/80 light:border-slate-200">
+                  <div>Phone: {b.phone || 'N/A'}</div>
+                  <div className="truncate">Address: {b.address || 'N/A'}</div>
+                  {b.isHeadquarter && (
+                    <div className="text-amber-400 font-bold text-[10px] flex items-center gap-1 mt-1">
+                      <StatusDot variant="warning" size="sm" /> Main Headquarter
+                    </div>
                   )}
                 </div>
               </div>
-
-              <div className="text-xs text-slate-400 space-y-1 pt-2 border-t border-slate-800">
-                <div>Phone: {b.phone || 'N/A'}</div>
-                <div className="truncate">Address: {b.address || 'N/A'}</div>
-                {b.isHeadquarter && (
-                  <div className="text-amber-400 font-bold text-[10px]">★ Main Headquarter</div>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Staff Roster Table */}
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl">
-        <h2 className="text-md font-bold text-white mb-4">Staff Members & Assigned Roles ({users.length})</h2>
+      <div className="bg-slate-900/90 dark:bg-slate-900/90 light:bg-white border border-slate-800 dark:border-slate-800 light:border-slate-200 rounded-2xl p-5 shadow-xl space-y-4">
+        <h2 className="text-md font-bold text-slate-100 dark:text-slate-100 light:text-slate-900">
+          Staff Members & Assigned Roles ({users.length})
+        </h2>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-slate-800/60 text-slate-400 uppercase font-semibold border-b border-slate-800">
-              <tr>
-                <th className="py-3 px-4">Staff Member</th>
-                <th className="py-3 px-4">Email</th>
-                <th className="py-3 px-4">Role</th>
-                <th className="py-3 px-4">Assigned Branch</th>
-                <th className="py-3 px-4">Status</th>
-                <th className="py-3 px-4 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-800/60 text-slate-300">
-              {users.map((u) => (
-                <tr key={u._id} className="hover:bg-slate-800/40 transition-colors">
-                  <td className="py-3 px-4 font-bold text-white">{u.name}</td>
-                  <td className="py-3 px-4 font-mono text-blue-400">{u.email}</td>
-                  <td className="py-3 px-4">
-                    <span className="bg-blue-500/20 text-blue-400 border border-blue-500/30 font-semibold px-2 py-0.5 rounded text-[10px]">
-                      {u.role}
-                    </span>
-                  </td>
-                  <td className="py-3 px-4 text-slate-300">{u.branch?.name || 'All Branches'}</td>
-                  <td className="py-3 px-4">
-                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                      u.isActive !== false ? 'bg-emerald-500/20 text-emerald-400' : 'bg-rose-500/20 text-rose-400'
-                    }`}>
-                      {u.isActive !== false ? 'Active' : 'Inactive'}
-                    </span>
-                  </td>
-                  <td className="py-3 px-4 text-right">
-                    <button
-                      onClick={() => handleOpenEditUser(u)}
-                      className="p-1.5 text-blue-400 hover:bg-slate-800 rounded-lg cursor-pointer flex items-center gap-1 ml-auto font-semibold border border-slate-700/60"
-                      title="Edit Staff Member Values"
-                    >
-                      <Edit className="w-3.5 h-3.5" /> Edit
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        {loading ? (
+          <Skeleton.Table rows={5} columns={6} />
+        ) : (
+          <DataTable
+            columns={staffColumns}
+            data={users}
+            searchable={true}
+            searchPlaceholder="Search staff member, email, or role..."
+            pagination={true}
+            pageSize={10}
+            emptyMessage="No staff members onboarded yet."
+          />
+        )}
       </div>
 
       {/* MODAL 1: ADD BRANCH */}
-      {showBranchModal && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 text-slate-200 shadow-2xl space-y-4">
-            <h2 className="text-lg font-bold text-white">Onboard New Branch Store</h2>
+      <Modal
+        isOpen={showBranchModal}
+        onClose={() => setShowBranchModal(false)}
+        title="Onboard New Branch Store"
+        description="Register a new retail branch location under your pharmacy organization"
+        size="md"
+        footer={
+          <>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowBranchModal(false)}
+              disabled={submitting}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={handleCreateBranch}
+              disabled={submitting}
+            >
+              {submitting ? 'Creating...' : 'Create Branch'}
+            </Button>
+          </>
+        }
+      >
+        <form onSubmit={handleCreateBranch} className="space-y-3">
+          <Input
+            label="Branch Name"
+            required
+            value={branchForm.name}
+            onChange={(e) => setBranchForm({ ...branchForm, name: e.target.value })}
+            placeholder="HealthCare Downtown Branch"
+          />
 
-            <form onSubmit={handleCreateBranch} className="space-y-3 text-xs">
-              <div>
-                <label className="text-slate-400">Branch Name *</label>
-                <input
-                  type="text"
-                  required
-                  value={branchForm.name}
-                  onChange={(e) => setBranchForm({ ...branchForm, name: e.target.value })}
-                  placeholder="HealthCare Downtown Branch"
-                  className="w-full bg-slate-800 border border-slate-700 rounded p-2 text-white"
-                />
-              </div>
+          <Input
+            label="Branch Code (Unique)"
+            required
+            value={branchForm.code}
+            onChange={(e) =>
+              setBranchForm({ ...branchForm, code: e.target.value.toUpperCase() })
+            }
+            placeholder="BR-02"
+          />
 
-              <div>
-                <label className="text-slate-400">Branch Code (Unique) *</label>
-                <input
-                  type="text"
-                  required
-                  value={branchForm.code}
-                  onChange={(e) => setBranchForm({ ...branchForm, code: e.target.value.toUpperCase() })}
-                  placeholder="BR-02"
-                  className="w-full bg-slate-800 border border-slate-700 rounded p-2 text-white font-mono uppercase"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="text-slate-400">Phone *</label>
-                  <input
-                    type="text"
-                    required
-                    value={branchForm.phone}
-                    onChange={(e) => setBranchForm({ ...branchForm, phone: e.target.value })}
-                    placeholder="+1 555 0199"
-                    className="w-full bg-slate-800 border border-slate-700 rounded p-2 text-white"
-                  />
-                </div>
-                <div>
-                  <label className="text-slate-400">Address *</label>
-                  <input
-                    type="text"
-                    required
-                    value={branchForm.address}
-                    onChange={(e) => setBranchForm({ ...branchForm, address: e.target.value })}
-                    placeholder="Downtown Plaza"
-                    className="w-full bg-slate-800 border border-slate-700 rounded p-2 text-white"
-                  />
-                </div>
-              </div>
-
-              <div className="flex gap-2 pt-3">
-                <button
-                  type="submit"
-                  className="flex-1 bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 rounded-lg cursor-pointer"
-                >
-                  Create Branch
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowBranchModal(false)}
-                  className="bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-2 rounded-lg cursor-pointer"
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <Input
+              label="Phone Number"
+              required
+              value={branchForm.phone}
+              onChange={(e) => setBranchForm({ ...branchForm, phone: e.target.value })}
+              placeholder="+1 555 0199"
+            />
+            <Input
+              label="Address"
+              required
+              value={branchForm.address}
+              onChange={(e) => setBranchForm({ ...branchForm, address: e.target.value })}
+              placeholder="Downtown Plaza"
+            />
           </div>
-        </div>
-      )}
+        </form>
+      </Modal>
 
-      {/* MODAL 2: EDIT & DELETE BRANCH STORE */}
-      {showEditBranchModal && editingBranch && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 text-slate-200 shadow-2xl space-y-4">
-            <div className="flex justify-between items-center border-b border-slate-800 pb-3">
-              <h2 className="text-lg font-bold text-white flex items-center gap-2">
-                <Edit className="w-5 h-5 text-blue-400" />
-                Edit Branch Store Details
-              </h2>
-              {!editingBranch.isHeadquarter && (
-                <button
-                  type="button"
-                  onClick={() => handleDeleteBranch(editingBranch._id, editingBranch.name)}
-                  className="bg-rose-600/20 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/30 text-xs font-bold px-3 py-1 rounded-lg cursor-pointer flex items-center gap-1 transition-all"
-                >
-                  <Trash2 className="w-3.5 h-3.5" /> Delete
-                </button>
-              )}
-            </div>
+      {/* MODAL 2: EDIT BRANCH */}
+      <Modal
+        isOpen={showEditBranchModal}
+        onClose={() => setShowEditBranchModal(false)}
+        title="Edit Branch Store Details"
+        size="md"
+        footer={
+          <>
+            {editingBranch && !editingBranch.isHeadquarter && (
+              <Button
+                variant="danger"
+                size="sm"
+                onClick={() => handleDeleteBranch(editingBranch._id, editingBranch.name)}
+                className="mr-auto"
+              >
+                <Trash2 className="w-3.5 h-3.5 mr-1" /> Delete Branch
+              </Button>
+            )}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowEditBranchModal(false)}
+              disabled={submitting}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={handleSaveEditBranch}
+              disabled={submitting}
+            >
+              {submitting ? 'Updating...' : 'Update Branch'}
+            </Button>
+          </>
+        }
+      >
+        <form onSubmit={handleSaveEditBranch} className="space-y-3">
+          <Input
+            label="Branch Name"
+            required
+            value={editBranchForm.name}
+            onChange={(e) =>
+              setEditBranchForm({ ...editBranchForm, name: e.target.value })
+            }
+          />
 
-            <form onSubmit={handleSaveEditBranch} className="space-y-3 text-xs">
-              <div>
-                <label className="text-slate-400">Branch Name *</label>
-                <input
-                  type="text"
-                  required
-                  value={editBranchForm.name}
-                  onChange={(e) => setEditBranchForm({ ...editBranchForm, name: e.target.value })}
-                  className="w-full bg-slate-800 border border-slate-700 rounded p-2 text-white"
-                />
-              </div>
+          <Input
+            label="Branch Code"
+            required
+            value={editBranchForm.code}
+            onChange={(e) =>
+              setEditBranchForm({ ...editBranchForm, code: e.target.value.toUpperCase() })
+            }
+          />
 
-              <div>
-                <label className="text-slate-400">Branch Code *</label>
-                <input
-                  type="text"
-                  required
-                  value={editBranchForm.code}
-                  onChange={(e) => setEditBranchForm({ ...editBranchForm, code: e.target.value.toUpperCase() })}
-                  className="w-full bg-slate-800 border border-slate-700 rounded p-2 text-white font-mono uppercase"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="text-slate-400">Phone *</label>
-                  <input
-                    type="text"
-                    required
-                    value={editBranchForm.phone}
-                    onChange={(e) => setEditBranchForm({ ...editBranchForm, phone: e.target.value })}
-                    className="w-full bg-slate-800 border border-slate-700 rounded p-2 text-white"
-                  />
-                </div>
-                <div>
-                  <label className="text-slate-400">Address *</label>
-                  <input
-                    type="text"
-                    required
-                    value={editBranchForm.address}
-                    onChange={(e) => setEditBranchForm({ ...editBranchForm, address: e.target.value })}
-                    className="w-full bg-slate-800 border border-slate-700 rounded p-2 text-white"
-                  />
-                </div>
-              </div>
-
-              <div className="flex gap-2 pt-3 border-t border-slate-800">
-                <button
-                  type="submit"
-                  className="flex-1 bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 rounded-lg cursor-pointer"
-                >
-                  Update Branch Values
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowEditBranchModal(false)}
-                  className="bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-2 rounded-lg cursor-pointer"
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <Input
+              label="Phone Number"
+              required
+              value={editBranchForm.phone}
+              onChange={(e) =>
+                setEditBranchForm({ ...editBranchForm, phone: e.target.value })
+              }
+            />
+            <Input
+              label="Address"
+              required
+              value={editBranchForm.address}
+              onChange={(e) =>
+                setEditBranchForm({ ...editBranchForm, address: e.target.value })
+              }
+            />
           </div>
-        </div>
-      )}
+        </form>
+      </Modal>
 
       {/* MODAL 3: INVITE STAFF */}
-      {showUserModal && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 text-slate-200 shadow-2xl space-y-4">
-            <h2 className="text-lg font-bold text-white">Invite New Staff Member</h2>
+      <Modal
+        isOpen={showUserModal}
+        onClose={() => setShowUserModal(false)}
+        title="Invite New Staff Member"
+        description="Create account credentials and assign RBAC role permissions."
+        size="md"
+        footer={
+          <>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowUserModal(false)}
+              disabled={submitting}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="success"
+              size="sm"
+              onClick={handleCreateUser}
+              disabled={submitting}
+            >
+              {submitting ? 'Inviting...' : 'Create User'}
+            </Button>
+          </>
+        }
+      >
+        <form onSubmit={handleCreateUser} className="space-y-3">
+          <Input
+            label="Full Name"
+            required
+            value={userForm.name}
+            onChange={(e) => setUserForm({ ...userForm, name: e.target.value })}
+            placeholder="Dr. Alex Rivera"
+          />
 
-            <form onSubmit={handleCreateUser} className="space-y-3 text-xs">
-              <div>
-                <label className="text-slate-400">Full Name *</label>
-                <input
-                  type="text"
-                  required
-                  value={userForm.name}
-                  onChange={(e) => setUserForm({ ...userForm, name: e.target.value })}
-                  placeholder="Dr. Alex Rivera"
-                  className="w-full bg-slate-800 border border-slate-700 rounded p-2 text-white"
-                />
-              </div>
+          <Input
+            label="Email Address"
+            type="email"
+            required
+            value={userForm.email}
+            onChange={(e) => setUserForm({ ...userForm, email: e.target.value })}
+            placeholder="alex@pharmacy.com"
+          />
 
-              <div>
-                <label className="text-slate-400">Email Address *</label>
-                <input
-                  type="email"
-                  required
-                  value={userForm.email}
-                  onChange={(e) => setUserForm({ ...userForm, email: e.target.value })}
-                  placeholder="alex@pharmacy.com"
-                  className="w-full bg-slate-800 border border-slate-700 rounded p-2 text-white"
-                />
-              </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <Select
+              label="System Role"
+              value={userForm.role}
+              onChange={(e) => setUserForm({ ...userForm, role: e.target.value })}
+              options={[
+                { value: 'Admin', label: 'Admin' },
+                { value: 'Pharmacist', label: 'Pharmacist' },
+                { value: 'Cashier', label: 'Cashier' },
+                { value: 'Inventory Manager', label: 'Inventory Manager' },
+                { value: 'Branch Manager', label: 'Branch Manager' }
+              ]}
+            />
 
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="text-slate-400">System Role</label>
-                  <select
-                    value={userForm.role}
-                    onChange={(e) => setUserForm({ ...userForm, role: e.target.value })}
-                    className="w-full bg-slate-800 border border-slate-700 rounded p-2 text-white"
-                  >
-                    <option value="Admin">Admin</option>
-                    <option value="Pharmacist">Pharmacist</option>
-                    <option value="Cashier">Cashier</option>
-                    <option value="Inventory Manager">Inventory Manager</option>
-                    <option value="Branch Manager">Branch Manager</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="text-slate-400">Assign Branch</label>
-                  <select
-                    value={userForm.branchId}
-                    onChange={(e) => setUserForm({ ...userForm, branchId: e.target.value })}
-                    className="w-full bg-slate-800 border border-slate-700 rounded p-2 text-white"
-                  >
-                    <option value="">Select Branch</option>
-                    {branches.map(b => (
-                      <option key={b._id} value={b._id}>{b.name}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div className="flex gap-2 pt-3">
-                <button
-                  type="submit"
-                  className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2 rounded-lg cursor-pointer"
-                >
-                  Create User
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowUserModal(false)}
-                  className="bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-2 rounded-lg cursor-pointer"
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
+            <Select
+              label="Assign Branch Location"
+              value={userForm.branchId}
+              onChange={(e) => setUserForm({ ...userForm, branchId: e.target.value })}
+              options={[
+                { value: '', label: 'All Branches' },
+                ...branches.map((b) => ({ value: b._id, label: b.name }))
+              ]}
+            />
           </div>
-        </div>
-      )}
+        </form>
+      </Modal>
 
       {/* MODAL 4: EDIT STAFF MEMBER */}
-      {showEditModal && editingUser && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 text-slate-200 shadow-2xl space-y-4">
-            <h2 className="text-lg font-bold text-white flex items-center gap-2">
-              <Edit className="w-5 h-5 text-blue-400" />
-              Edit Staff Member Details
-            </h2>
+      <Modal
+        isOpen={showEditUserModal}
+        onClose={() => setShowEditUserModal(false)}
+        title="Edit Staff Member Details"
+        size="md"
+        footer={
+          <>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowEditUserModal(false)}
+              disabled={submitting}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={handleSaveEditUser}
+              disabled={submitting}
+            >
+              {submitting ? 'Updating...' : 'Update Staff Member'}
+            </Button>
+          </>
+        }
+      >
+        <form onSubmit={handleSaveEditUser} className="space-y-3">
+          <Input
+            label="Full Name"
+            required
+            value={editUserForm.name}
+            onChange={(e) =>
+              setEditUserForm({ ...editUserForm, name: e.target.value })
+            }
+          />
 
-            <form onSubmit={handleSaveEditUser} className="space-y-3 text-xs">
-              <div>
-                <label className="text-slate-400">Full Name *</label>
-                <input
-                  type="text"
-                  required
-                  value={editUserForm.name}
-                  onChange={(e) => setEditUserForm({ ...editUserForm, name: e.target.value })}
-                  className="w-full bg-slate-800 border border-slate-700 rounded p-2 text-white"
-                />
-              </div>
+          <Input
+            label="Email Address"
+            type="email"
+            required
+            value={editUserForm.email}
+            onChange={(e) =>
+              setEditUserForm({ ...editUserForm, email: e.target.value })
+            }
+          />
 
-              <div>
-                <label className="text-slate-400">Email Address *</label>
-                <input
-                  type="email"
-                  required
-                  value={editUserForm.email}
-                  onChange={(e) => setEditUserForm({ ...editUserForm, email: e.target.value })}
-                  className="w-full bg-slate-800 border border-slate-700 rounded p-2 text-white font-mono"
-                />
-              </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <Select
+              label="System Role"
+              value={editUserForm.role}
+              onChange={(e) =>
+                setEditUserForm({ ...editUserForm, role: e.target.value })
+              }
+              options={[
+                { value: 'Owner', label: 'Owner' },
+                { value: 'Admin', label: 'Admin' },
+                { value: 'Pharmacist', label: 'Pharmacist' },
+                { value: 'Cashier', label: 'Cashier' },
+                { value: 'Inventory Manager', label: 'Inventory Manager' },
+                { value: 'Branch Manager', label: 'Branch Manager' }
+              ]}
+            />
 
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="text-slate-400">System Role</label>
-                  <select
-                    value={editUserForm.role}
-                    onChange={(e) => setEditUserForm({ ...editUserForm, role: e.target.value })}
-                    className="w-full bg-slate-800 border border-slate-700 rounded p-2 text-white font-bold"
-                  >
-                    <option value="Owner">Owner</option>
-                    <option value="Admin">Admin</option>
-                    <option value="Pharmacist">Pharmacist</option>
-                    <option value="Cashier">Cashier</option>
-                    <option value="Inventory Manager">Inventory Manager</option>
-                    <option value="Branch Manager">Branch Manager</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="text-slate-400">Assign Branch</label>
-                  <select
-                    value={editUserForm.branchId}
-                    onChange={(e) => setEditUserForm({ ...editUserForm, branchId: e.target.value })}
-                    className="w-full bg-slate-800 border border-slate-700 rounded p-2 text-white"
-                  >
-                    <option value="">Select Branch</option>
-                    {branches.map(b => (
-                      <option key={b._id} value={b._id}>{b.name}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div>
-                <label className="text-slate-400">Account Status</label>
-                <select
-                  value={editUserForm.isActive ? 'true' : 'false'}
-                  onChange={(e) => setEditUserForm({ ...editUserForm, isActive: e.target.value === 'true' })}
-                  className="w-full bg-slate-800 border border-slate-700 rounded p-2 text-white font-bold"
-                >
-                  <option value="true">Active</option>
-                  <option value="false">Inactive / Suspended</option>
-                </select>
-              </div>
-
-              <div className="flex gap-2 pt-3 border-t border-slate-800">
-                <button
-                  type="submit"
-                  className="flex-1 bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 rounded-lg cursor-pointer"
-                >
-                  Update Staff Values
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowEditModal(false)}
-                  className="bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-2 rounded-lg cursor-pointer"
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
+            <Select
+              label="Assign Branch Location"
+              value={editUserForm.branchId}
+              onChange={(e) =>
+                setEditUserForm({ ...editUserForm, branchId: e.target.value })
+              }
+              options={[
+                { value: '', label: 'All Branches' },
+                ...branches.map((b) => ({ value: b._id, label: b.name }))
+              ]}
+            />
           </div>
-        </div>
-      )}
 
+          <Select
+            label="Account Status"
+            value={editUserForm.isActive ? 'true' : 'false'}
+            onChange={(e) =>
+              setEditUserForm({ ...editUserForm, isActive: e.target.value === 'true' })
+            }
+            options={[
+              { value: 'true', label: 'Active' },
+              { value: 'false', label: 'Suspended / Inactive' }
+            ]}
+          />
+        </form>
+      </Modal>
     </div>
   );
 };

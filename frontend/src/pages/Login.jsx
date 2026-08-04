@@ -2,10 +2,11 @@ import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Link } from 'react-router-dom';
 import { Building2, KeyRound, Mail, AlertCircle, ArrowRight, ShieldCheck } from 'lucide-react';
-import API from '../api/axios';
+import { Input, Button, useToast } from '../components/ui';
 
 const Login = () => {
   const { login } = useAuth();
+  const toast = useToast();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [twoFactorCode, setTwoFactorCode] = useState('');
@@ -22,20 +23,23 @@ const Login = () => {
       const res = await login(email, password, requires2FA ? twoFactorCode : undefined);
       if (res?.status === '2fa_required') {
         setRequires2FA(true);
+        toast.info('Two-Factor Authentication required. Check console or authenticator app.');
+      } else {
+        toast.success('Signed in successfully!');
       }
     } catch (err) {
-      if (!err.response) {
-        setError('Cannot connect to backend server. Please verify the backend server is running on http://localhost:5000');
-      } else {
-        setError(err.response?.data?.message || 'Failed to login. Please check credentials.');
-      }
+      const errMsg = !err.response
+        ? 'Cannot connect to backend server. Please verify backend server is running.'
+        : err.response?.data?.message || 'Failed to login. Please check credentials.';
+      setError(errMsg);
+      toast.error(errMsg);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 flex flex-col justify-center py-12 sm:px-6 lg:px-8 text-slate-100">
+    <div className="min-h-screen bg-slate-950 flex flex-col justify-center py-12 sm:px-6 lg:px-8 text-slate-100 font-sans">
       <div className="sm:mx-auto sm:w-full sm:max-w-md text-center">
         <div className="mx-auto w-14 h-14 bg-gradient-to-tr from-blue-600 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-500/30 mb-4">
           <Building2 className="w-8 h-8 text-white" />
@@ -49,85 +53,81 @@ const Login = () => {
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md px-4 sm:px-0">
-        <div className="bg-slate-900 border border-slate-800 py-8 px-6 shadow-2xl rounded-2xl sm:px-10 space-y-5">
+        <div className="glass-card bg-slate-900/80 backdrop-blur-xl border border-slate-800 py-8 px-6 shadow-2xl rounded-2xl sm:px-10 space-y-5">
           {error && (
-            <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-lg flex items-center gap-2 text-red-400 text-xs">
+            <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-xl flex items-center gap-2 text-red-400 text-xs font-medium">
               <AlertCircle className="w-4 h-4 shrink-0" />
               <span>{error}</span>
             </div>
           )}
 
           {requires2FA && (
-            <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-lg flex items-center gap-2 text-amber-400 text-xs">
+            <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl flex items-center gap-2 text-amber-400 text-xs font-medium animate-in fade-in slide-in-from-top-2">
               <ShieldCheck className="w-4 h-4 shrink-0" />
-              <span>Two-Factor Authentication required. Check console for 2FA Code!</span>
+              <span>Two-Factor Authentication required. Enter your 6-digit code below!</span>
             </div>
           )}
 
           <form className="space-y-4" onSubmit={handleSubmit}>
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">
-                Owner / Subscriber Email Address
-              </label>
-              <div className="relative">
-                <Mail className="w-5 h-5 text-slate-500 absolute left-3 top-2.5" />
-                <input
-                  type="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="owner@pharmacy.com"
-                  className="w-full bg-slate-800 border border-slate-700 rounded-xl pl-10 pr-4 py-2.5 text-white placeholder-slate-500 text-sm focus:outline-none focus:border-blue-500"
-                />
-              </div>
-            </div>
+            <Input
+              label="Owner / Subscriber Email Address"
+              type="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="owner@pharmacy.com"
+              leftIcon={Mail}
+            />
 
             <div>
-              <div className="flex justify-between items-center mb-1">
-                <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider">
-                  Password
-                </label>
-                <Link to="/forgot-password" className="text-xs text-blue-400 hover:underline">
+              <div className="flex justify-between items-center mb-1.5">
+                <span className="text-xs font-semibold text-slate-300 dark:text-slate-300 light:text-slate-700">
+                  Password <span className="text-red-500">*</span>
+                </span>
+                <Link to="/forgot-password" className="text-xs text-blue-400 hover:underline font-medium">
                   Forgot Password?
                 </Link>
               </div>
-              <div className="relative">
-                <KeyRound className="w-5 h-5 text-slate-500 absolute left-3 top-2.5" />
-                <input
-                  type="password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  className="w-full bg-slate-800 border border-slate-700 rounded-xl pl-10 pr-4 py-2.5 text-white placeholder-slate-500 text-sm focus:outline-none focus:border-blue-500"
-                />
-              </div>
+              <Input
+                type="password"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                leftIcon={KeyRound}
+              />
             </div>
 
-            {requires2FA && (
-              <div>
-                <label className="block text-xs font-semibold text-amber-400 uppercase tracking-wider mb-1">
-                  2FA Verification Code (6-digits)
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={twoFactorCode}
-                  onChange={(e) => setTwoFactorCode(e.target.value)}
-                  placeholder="123456"
-                  className="w-full bg-slate-800 border border-amber-500 rounded-xl px-3 py-2.5 text-white font-mono text-center tracking-widest text-lg"
-                />
-              </div>
-            )}
+            {/* Smooth 2FA Field Transition Container */}
+            <div
+              className={`transition-all duration-300 overflow-hidden ${
+                requires2FA
+                  ? 'max-h-32 opacity-100 transform translate-y-0'
+                  : 'max-h-0 opacity-0 transform -translate-y-2 pointer-events-none'
+              }`}
+            >
+              <Input
+                label="2FA Verification Code (6-digits)"
+                type="text"
+                required={requires2FA}
+                value={twoFactorCode}
+                onChange={(e) => setTwoFactorCode(e.target.value)}
+                placeholder="123456"
+                className="font-mono text-center tracking-widest text-lg border-amber-500/80 focus:border-amber-500"
+              />
+            </div>
 
-            <button
+            <Button
               type="submit"
+              variant="primary"
+              size="lg"
+              fullWidth
               disabled={loading}
-              className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-4 rounded-xl shadow-lg shadow-blue-500/20 transition-all flex items-center justify-center gap-2 text-sm cursor-pointer mt-2"
+              className="mt-2"
             >
               {loading ? 'Authenticating...' : requires2FA ? 'Verify 2FA & Sign In' : 'Sign In'}
-              <ArrowRight className="w-4 h-4" />
-            </button>
+              <ArrowRight className="w-4 h-4 ml-2" />
+            </Button>
           </form>
 
           <div className="text-center pt-4 border-t border-slate-800">

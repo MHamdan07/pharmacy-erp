@@ -12,17 +12,17 @@ import {
   FileSpreadsheet, Download, Sliders, ChevronRight, Edit3, Trash2, Eye,
   Filter, Mail, Globe, Receipt, HelpCircle, UserCheck, Percent
 } from 'lucide-react';
+import { Card, Button, Modal, Badge, Skeleton, useToast } from '../components/ui';
 
 const SuperAdminDashboard = () => {
   const { logout } = useAuth();
   const { t } = useLanguage();
+  const toast = useToast();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [data, setData] = useState(null);
   const [fullAnalytics, setFullAnalytics] = useState(null);
-  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [toast, setToast] = useState('');
   const [themeMode, setThemeMode] = useState('dark');
   const [showNotificationsDropdown, setShowNotificationsDropdown] = useState(false);
 
@@ -45,9 +45,6 @@ const SuperAdminDashboard = () => {
   });
   const [couponFormData, setCouponFormData] = useState({ code: '', discountPercent: 15, maxUses: 100, expiryDays: 30 });
   const [categoryFormData, setCategoryFormData] = useState({ name: '', description: '' });
-  const [branchFormData, setBranchFormData] = useState({ name: '', code: '', managerName: '', type: 'Branch' });
-  const [planFormData, setPlanFormData] = useState({ name: '', price: 299, maxBranches: 5, maxUsers: 20 });
-  const [notificationMsg, setNotificationMsg] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
 
   // Mock State Lists for Super Admin Modules
@@ -78,7 +75,7 @@ const SuperAdminDashboard = () => {
     { id: 'TKT-803', company: 'Apex Pharma', subject: 'AI Prescription OCR Calibration', priority: 'Low', status: 'Resolved', createdAt: '2026-08-01 09:00' }
   ]);
 
-  const [auditLogs, setAuditLogs] = useState([
+  const [auditLogs] = useState([
     { id: 'LOG-901', action: 'Company Onboarded', details: 'Registered Apex Health Pharmacy (Enterprise Plan)', user: 'SuperAdmin', ip: '192.168.1.1', timestamp: '2026-08-03 18:20' },
     { id: 'LOG-902', action: 'Subscription Renewed', details: 'Extended MedixCare Store (+30 Days)', user: 'SuperAdmin', ip: '192.168.1.1', timestamp: '2026-08-03 16:45' },
     { id: 'LOG-903', action: 'Plan Modified', details: 'Updated Professional Plan price to $299/mo', user: 'SuperAdmin', ip: '192.168.1.1', timestamp: '2026-08-02 11:10' },
@@ -101,7 +98,6 @@ const SuperAdminDashboard = () => {
 
   const fetchSuperAdminData = useCallback(async () => {
     try {
-      setLoading(true);
       const [subRes, analyticsRes] = await Promise.all([
         API.get('/subscriptions/admin/all-subscriptions'),
         API.get('/subscriptions/admin/full-analytics')
@@ -110,19 +106,12 @@ const SuperAdminDashboard = () => {
       setFullAnalytics(analyticsRes.data);
     } catch (err) {
       console.error('Failed to load SuperAdmin dashboard:', err);
-    } finally {
-      setLoading(false);
     }
   }, []);
 
   useEffect(() => {
     fetchSuperAdminData();
   }, [fetchSuperAdminData]);
-
-  const showToast = (msg) => {
-    setToast(msg);
-    setTimeout(() => setToast(''), 4000);
-  };
 
   const handleCreateCompany = async (e) => {
     e.preventDefault();
@@ -136,12 +125,12 @@ const SuperAdminDashboard = () => {
         phone: '+1 800 555 0999',
         address: 'Enterprise HQ'
       });
-      showToast(`Company "${companyFormData.name}" onboarded successfully!`);
+      toast.success(`Company "${companyFormData.name}" onboarded successfully!`);
       setModalType(null);
       setCompanyFormData({ name: '', code: '', email: '', plan: 'Enterprise' });
       fetchSuperAdminData();
     } catch (err) {
-      alert(err.response?.data?.message || 'Failed to create company');
+      toast.error(err.response?.data?.message || 'Failed to create company');
     } finally {
       setActionLoading(false);
     }
@@ -170,26 +159,34 @@ const SuperAdminDashboard = () => {
     try {
       setActionLoading(true);
       await API.put(`/subscriptions/admin/company/${editingCompanyItem.pharmacy._id}`, editCompanyForm);
-      showToast(`Company "${editCompanyForm.pharmacyName}" updated successfully!`);
+      toast.success(`Company "${editCompanyForm.pharmacyName}" updated successfully!`);
       setModalType(null);
       setEditingCompanyItem(null);
       fetchSuperAdminData();
     } catch (err) {
-      alert(err.response?.data?.message || 'Failed to update company');
+      toast.error(err.response?.data?.message || 'Failed to update company');
     } finally {
       setActionLoading(false);
     }
   };
 
   const handleDeleteCompany = async (item) => {
-    if (!window.confirm(`Are you sure you want to PERMANENTLY DELETE company "${item.pharmacy.name}" (${item.pharmacy.code}) and all its store branches and user accounts? This action cannot be undone.`)) return;
+    const confirmed = await toast.confirm({
+      title: 'Permanently Delete Company Tenant?',
+      message: `Are you sure you want to PERMANENTLY DELETE company "${item.pharmacy.name}" (${item.pharmacy.code}) and all its store branches and user accounts? This action cannot be undone.`,
+      confirmText: 'Delete Company',
+      cancelText: 'Cancel',
+      variant: 'danger',
+    });
+    if (!confirmed) return;
+
     try {
       setActionLoading(true);
       await API.delete(`/subscriptions/admin/company/${item.pharmacy._id}`);
-      showToast(`Company "${item.pharmacy.name}" deleted successfully.`);
+      toast.success(`Company "${item.pharmacy.name}" deleted successfully.`);
       fetchSuperAdminData();
     } catch (err) {
-      alert(err.response?.data?.message || 'Failed to delete company');
+      toast.error(err.response?.data?.message || 'Failed to delete company');
     } finally {
       setActionLoading(false);
     }
@@ -207,7 +204,7 @@ const SuperAdminDashboard = () => {
       status: 'active'
     };
     setCoupons([newCoupon, ...coupons]);
-    showToast(`Promotional Coupon "${newCoupon.code}" created successfully!`);
+    toast.success(`Promotional Coupon "${newCoupon.code}" created successfully!`);
     setModalType(null);
     setCouponFormData({ code: '', discountPercent: 15, maxUses: 100, expiryDays: 30 });
   };
@@ -221,47 +218,19 @@ const SuperAdminDashboard = () => {
       count: 0
     };
     setCategories([...categories, newCat]);
-    showToast(`Medicine Category "${newCat.name}" added to global catalog!`);
+    toast.success(`Medicine Category "${newCat.name}" added to global catalog!`);
     setModalType(null);
     setCategoryFormData({ name: '', description: '' });
   };
 
-  const handleSendNotification = (e) => {
-    e.preventDefault();
-    showToast(`Broadcast notification sent to all pharmacy tenant owners!`);
-    setModalType(null);
-    setNotificationMsg('');
-  };
-
-  const handleSuspendCompany = async (pharmacyId, name) => {
-    if (!window.confirm(`Suspend subscription and access for "${name}"?`)) return;
-    try {
-      await API.post(`/subscriptions/suspend/${pharmacyId}`);
-      showToast(`Suspended company "${name}"`);
-      fetchSuperAdminData();
-    } catch (err) {
-      alert(err.response?.data?.message || 'Failed to suspend company');
-    }
-  };
-
-  const handleRenewCompany = async (pharmacyId, name) => {
-    try {
-      await API.post(`/subscriptions/renew/${pharmacyId}`);
-      showToast(`Renewed subscription for "${name}" (+30 Days)`);
-      fetchSuperAdminData();
-    } catch (err) {
-      alert(err.response?.data?.message || 'Failed to renew company');
-    }
-  };
-
   const handleApproveInvoice = (invId) => {
     setInvoices(invoices.map(i => i.id === invId ? { ...i, status: 'paid' } : i));
-    showToast(`Approved offline payment for Invoice #${invId}`);
+    toast.success(`Approved offline payment for Invoice #${invId}`);
   };
 
   const handleResolveTicket = (tktId) => {
     setSupportTickets(supportTickets.map(t => t.id === tktId ? { ...t, status: 'Resolved' } : t));
-    showToast(`Ticket #${tktId} marked as Resolved`);
+    toast.success(`Ticket #${tktId} marked as Resolved`);
     setModalType(null);
   };
 
@@ -275,12 +244,11 @@ const SuperAdminDashboard = () => {
 
   const overview = fullAnalytics?.overview || {};
   const plans = fullAnalytics?.plans || {};
-  const health = fullAnalytics?.systemHealth || {};
 
   const toggleTheme = () => {
     const nextTheme = themeMode === 'dark' ? 'light' : 'dark';
     setThemeMode(nextTheme);
-    showToast(`Switched workspace theme mode to ${nextTheme.toUpperCase()}`);
+    toast.info(`Switched workspace theme mode to ${nextTheme.toUpperCase()}`);
   };
 
   // 12 Super Admin Sidebar Link Definitions
@@ -301,13 +269,6 @@ const SuperAdminDashboard = () => {
 
   return (
     <div className={`min-h-screen ${themeMode === 'dark' ? 'bg-slate-950 text-slate-100' : 'bg-slate-100 text-slate-900'} flex flex-col font-sans antialiased`}>
-      {/* Toast Notification */}
-      {toast && (
-        <div className="fixed top-5 right-5 z-50 bg-emerald-600 text-white px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-3 animate-bounce">
-          <CheckCircle2 className="w-5 h-5" />
-          <span className="font-semibold text-sm">{toast}</span>
-        </div>
-      )}
 
       {/* ------------------------------------------------------------
           1. DEDICATED SUPER ADMIN TOP NAVIGATION BAR & BREADCRUMB
@@ -486,7 +447,7 @@ const SuperAdminDashboard = () => {
                 <Percent className="w-3.5 h-3.5" /> + New Coupon
               </button>
               <button
-                onClick={() => setModalType('send_notification')}
+                onClick={() => toast.success('Broadcast notification sent to all pharmacy tenant owners!')}
                 className="px-3 py-1.5 bg-amber-600/20 hover:bg-amber-600/30 text-amber-300 border border-amber-500/30 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
               >
                 <Bell className="w-3.5 h-3.5" /> Broadcast Notice
@@ -705,7 +666,7 @@ const SuperAdminDashboard = () => {
                       </div>
                     </div>
                     <button
-                      onClick={() => { setPlanFormData({ name: p.name, price: p.price, maxBranches: 5, maxUsers: 20 }); setModalType('edit_plan'); }}
+                      onClick={() => setModalType('edit_plan')}
                       className="w-full py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold rounded-xl transition cursor-pointer"
                     >
                       Configure Plan Limits
@@ -766,7 +727,7 @@ const SuperAdminDashboard = () => {
                               </button>
                             )}
                             <button
-                              onClick={() => showToast(`Downloaded invoice ${inv.id} PDF`)}
+                              onClick={() => toast.success(`Downloaded invoice ${inv.id} PDF`)}
                               className="px-2.5 py-1 bg-slate-800 text-slate-200 rounded-lg text-xs font-bold cursor-pointer"
                             >
                               <Download className="w-3.5 h-3.5 inline" /> Receipt
@@ -830,7 +791,7 @@ const SuperAdminDashboard = () => {
                   Cross-Tenant User Roster & RBAC Matrix
                 </h2>
                 <button
-                  onClick={() => showToast('Opened RBAC Permission Matrix Editor')}
+                  onClick={() => toast.success('Opened RBAC Permission Matrix Editor')}
                   className="px-3.5 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-xl text-xs font-bold cursor-pointer"
                 >
                   <Lock className="w-3.5 h-3.5 inline mr-1" /> Configure RBAC Permissions
@@ -946,7 +907,7 @@ const SuperAdminDashboard = () => {
                   <button onClick={() => window.print()} className="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold cursor-pointer">
                     <Download className="w-3.5 h-3.5 inline mr-1" /> Export PDF
                   </button>
-                  <button onClick={() => showToast('Exported CSV Spreadsheet Report')} className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold cursor-pointer">
+                  <button onClick={() => toast.success('Exported CSV Spreadsheet Report')} className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold cursor-pointer">
                     <FileSpreadsheet className="w-3.5 h-3.5 inline mr-1" /> Export Excel
                   </button>
                 </div>
@@ -1060,7 +1021,7 @@ const SuperAdminDashboard = () => {
                   </div>
                 </div>
                 <button
-                  onClick={() => showToast('Platform Configuration settings updated successfully!')}
+                  onClick={() => toast.success('Platform Configuration settings updated successfully!')}
                   className="px-5 py-2.5 bg-purple-600 hover:bg-purple-500 text-white rounded-xl text-xs font-bold cursor-pointer"
                 >
                   Save Settings

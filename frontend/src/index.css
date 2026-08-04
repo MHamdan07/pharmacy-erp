@@ -1,106 +1,228 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,600;9..144,700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 @import "tailwindcss";
 
-/* Enterprise Pharmacy ERP Light Mode & Dark Mode Styling System */
+/* Enterprise Healthcare Product Design System (Inspired by Enhance Healthcare Product Design) */
 
-:root {
-  color-scheme: dark;
+@theme {
+  --font-sans: 'DM Sans', 'Inter', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+  --font-display: 'Fraunces', serif;
+
+  /* Primary Healthcare Teal/Cyan Medical Colors */
+  --color-teal-50: #f0fdfa;
+  --color-teal-100: #ccfbf1;
+  --color-teal-500: #14b8a6;
+  --color-teal-600: #0d9488;
+  --color-teal-700: #0f766e;
+
+  /* Primary Brand Medical Colors */
+  --color-primary-50: #eff6ff;
+  --color-primary-100: #dbeafe;
+  --color-primary-500: #3b82f6;
+  --color-primary-600: #2563eb;
+  --color-primary-700: #1d4ed8;
+
+  /* Status Colors */
+  --color-success-500: #22c55e;
+  --color-success-600: #16a34a;
+
+  --color-danger-500: #ef4444;
+  --color-danger-600: #dc2626;
+
+  --color-warning-500: #f59e0b;
+  --color-warning-600: #d97706;
+
+  /* Neutral Background Tokens */
+  --color-dark-bg: #0f172a;
+  --color-light-bg: #f0f4f8;
 }
 
-/* Light Mode Overrides for Medical & Retail Pharmacy Staff User-Friendliness */
+/* Light / Dark Mode CSS Custom Properties System */
+:root {
+  color-scheme: dark;
+  --bg-app: #0f172a;
+  --bg-surface: #1e293b;
+  --bg-surface-elevated: #334155;
+  --border-app: #334155;
+  --border-subtle: #1e293b;
+  --text-main: #f8fafc;
+  --text-muted: #94a3b8;
+  --text-subtle: #64748b;
+
+  /* Default Flagship Healthcare Teal Accent Palette */
+  --accent-500: #14b8a6;
+  --accent-600: #0d9488;
+  --accent-700: #0f766e;
+  --accent-soft: rgba(20, 184, 166, 0.18);
+  --accent-border: rgba(20, 184, 166, 0.3);
+  --accent-ring: rgba(20, 184, 166, 0.4);
+}
+
+:root[data-accent="emerald"] {
+  --accent-500: #10b981;
+  --accent-600: #059669;
+  --accent-700: #047857;
+  --accent-soft: rgba(16, 185, 129, 0.15);
+  --accent-border: rgba(16, 185, 129, 0.3);
+  --accent-ring: rgba(16, 185, 129, 0.4);
+}
+
+:root[data-accent="purple"] {
+  --accent-500: #a855f7;
+  --accent-600: #9333ea;
+  --accent-700: #7e22ce;
+  --accent-soft: rgba(147, 51, 234, 0.15);
+  --accent-border: rgba(147, 51, 234, 0.3);
+  --accent-ring: rgba(147, 51, 234, 0.4);
+}
+
+:root[data-accent="rose"] {
+  --accent-500: #f43f5e;
+  --accent-600: #e11d48;
+  --accent-700: #be123c;
+  --accent-soft: rgba(244, 63, 94, 0.15);
+  --accent-border: rgba(244, 63, 94, 0.3);
+  --accent-ring: rgba(244, 63, 94, 0.4);
+}
+
+:root[data-accent="amber"] {
+  --accent-500: #f59e0b;
+  --accent-600: #d97706;
+  --accent-700: #b45309;
+  --accent-soft: rgba(245, 158, 11, 0.15);
+  --accent-border: rgba(245, 158, 11, 0.3);
+  --accent-ring: rgba(245, 158, 11, 0.4);
+}
+
 html.light-mode {
   color-scheme: light;
-  background-color: #f8fafc;
-  color: #0f172a;
+  --bg-app: #f8fafc;
+  --bg-surface: #ffffff;
+  --bg-surface-elevated: #f1f5f9;
+  --border-app: #e2e8f0;
+  --border-subtle: #cbd5e1;
+  --text-main: #0f172a;
+  --text-muted: #475569;
+  --text-subtle: #64748b;
 }
 
 html.light-mode body {
-  background-color: #f8fafc;
-  color: #0f172a;
+  background-color: var(--bg-app);
+  color: var(--text-main);
 }
 
-/* Header & Sidebar in Light Mode */
-html.light-mode header,
-html.light-mode aside {
-  background-color: #ffffff !important;
-  border-color: #e2e8f0 !important;
-  color: #0f172a !important;
+/* Typography & Display Helpers */
+.font-display {
+  font-family: 'Fraunces', serif;
 }
 
-html.light-mode header h1,
-html.light-mode aside span,
-html.light-mode aside a {
-  color: #0f172a !important;
+.font-mono-code {
+  font-family: 'JetBrains Mono', monospace;
 }
 
-html.light-mode aside a:hover {
-  background-color: #f1f5f9 !important;
-  color: #2563eb !important;
+/* Glassmorphism & Healthcare Product Design Utility Components */
+.sidebar-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9.5px 14px;
+  border-radius: 10px;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.65);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  letter-spacing: 0.01em;
+}
+.sidebar-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.95);
+}
+.sidebar-item.active {
+  background: rgba(20, 184, 166, 0.18);
+  color: #5eead4;
 }
 
-/* Cards & Main Content Containers */
-html.light-mode .bg-slate-900,
-html.light-mode .bg-slate-950 {
-  background-color: #ffffff !important;
-  border-color: #e2e8f0 !important;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03) !important;
+.kpi-card {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-app);
+  border-radius: 14px;
+  padding: 20px 22px;
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+.kpi-card:hover {
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.08);
+  transform: translateY(-1px);
 }
 
-html.light-mode .bg-slate-900\/40,
-html.light-mode .bg-slate-800\/40,
-html.light-mode .bg-slate-800\/60,
-html.light-mode .bg-slate-800\/90 {
-  background-color: #f8fafc !important;
-  border-color: #e2e8f0 !important;
+.status-badge {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10.5px;
+  font-weight: 500;
+  padding: 3px 9px;
+  border-radius: 100px;
+  letter-spacing: 0.04em;
 }
 
-html.light-mode .bg-slate-800 {
-  background-color: #f1f5f9 !important;
-  border-color: #cbd5e1 !important;
+.glass-card {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-app);
+  backdrop-filter: blur(12px);
+  border-radius: 1rem;
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.08);
 }
 
-/* Text Contrast */
-html.light-mode .text-white {
-  color: #0f172a !important;
+.glass-modal {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-app);
+  backdrop-filter: blur(16px);
+  border-radius: 1rem;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35);
 }
 
-html.light-mode .text-slate-300,
-html.light-mode .text-slate-400 {
-  color: #475569 !important;
+.glass-panel {
+  background-color: var(--bg-surface-elevated);
+  border: 1px solid var(--border-subtle);
+  backdrop-filter: blur(8px);
+  border-radius: 0.75rem;
 }
 
-html.light-mode .text-slate-500 {
-  color: #64748b !important;
+/* Dynamic Accent Custom Utility Helpers */
+.bg-accent {
+  background-color: var(--accent-600) !important;
 }
 
-/* Inputs & Form Fields */
-html.light-mode input,
-html.light-mode select,
-html.light-mode textarea {
-  background-color: #ffffff !important;
-  border-color: #cbd5e1 !important;
-  color: #0f172a !important;
+.bg-accent-hover:hover {
+  background-color: var(--accent-700) !important;
 }
 
-html.light-mode input::placeholder {
-  color: #94a3b8 !important;
+.bg-accent-soft {
+  background-color: var(--accent-soft) !important;
 }
 
-/* Tables */
-html.light-mode table thead {
-  background-color: #f1f5f9 !important;
-  color: #334155 !important;
-  border-color: #e2e8f0 !important;
+.text-accent {
+  color: var(--accent-500) !important;
 }
 
-html.light-mode table tbody tr {
-  border-color: #e2e8f0 !important;
+.border-accent {
+  border-color: var(--accent-600) !important;
 }
 
-html.light-mode table tbody tr:hover {
-  background-color: #f8fafc !important;
+.border-accent-subtle {
+  border-color: var(--accent-border) !important;
 }
 
-/* Scrollbars */
+.ring-accent:focus, .ring-accent:focus-within {
+  --tw-ring-color: var(--accent-ring);
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 3px var(--accent-ring) !important;
+}
+
+/* Custom Scrollbars */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;

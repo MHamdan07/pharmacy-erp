@@ -1,15 +1,28 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import API from '../api/axios';
-import { Users, Plus, Phone, Award, FileText, Edit, Trash2, Search, X, CheckCircle2, ShieldAlert } from 'lucide-react';
-import { useLanguage } from '../context/LanguageContext';
+import { Users, Plus, Edit, Trash2, Search, HeartPulse, Phone, Mail, Award, ShieldAlert } from 'lucide-react';
+import {
+  DataTable,
+  Input,
+  Select,
+  Textarea,
+  Badge,
+  Button,
+  Modal,
+  Skeleton,
+  useToast
+} from '../components/ui';
 
 const CustomersPatients = () => {
-  const { t } = useLanguage();
+  const toast = useToast();
   const [customers, setCustomers] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [genderFilter, setGenderFilter] = useState('all');
   const [showModal, setShowModal] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState(null);
-  const [toast, setToast] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+
   const [form, setForm] = useState({
     name: '',
     phone: '',
@@ -24,21 +37,20 @@ const CustomersPatients = () => {
 
   const fetchCustomers = useCallback(async () => {
     try {
+      setLoading(true);
       const res = await API.get('/customers/customers');
       setCustomers(res.data || []);
     } catch (err) {
       console.error('Failed to load customers:', err);
+      toast.error(err.response?.data?.message || 'Failed to load patient directory.');
+    } finally {
+      setLoading(false);
     }
-  }, []);
+  }, [toast]);
 
   useEffect(() => {
     fetchCustomers();
   }, [fetchCustomers]);
-
-  const showToast = (msg) => {
-    setToast(msg);
-    setTimeout(() => setToast(''), 4000);
-  };
 
   const handleOpenCreateModal = () => {
     setEditingCustomer(null);
@@ -65,7 +77,9 @@ const CustomersPatients = () => {
       age: customer.age !== undefined && customer.age !== null ? customer.age : 30,
       gender: customer.gender || 'unspecified',
       address: customer.address || '',
-      allergies: Array.isArray(customer.allergies) ? customer.allergies.join(', ') : (customer.allergies || ''),
+      allergies: Array.isArray(customer.allergies)
+        ? customer.allergies.join(', ')
+        : customer.allergies || '',
       medicalNotes: customer.medicalNotes || '',
       loyaltyPoints: customer.loyaltyPoints || 0
     });
@@ -74,279 +88,360 @@ const CustomersPatients = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setSubmitting(true);
     try {
       const payload = {
         ...form,
         age: Number(form.age) || 0,
-        allergies: typeof form.allergies === 'string' ? form.allergies.split(',').map(s => s.trim()).filter(Boolean) : form.allergies
+        allergies:
+          typeof form.allergies === 'string'
+            ? form.allergies
+                .split(',')
+                .map((s) => s.trim())
+                .filter(Boolean)
+            : form.allergies
       };
 
       if (editingCustomer) {
         await API.put(`/customers/customers/${editingCustomer._id}`, payload);
-        showToast(`Patient profile "${form.name}" updated successfully!`);
+        toast.success(`Patient profile "${form.name}" updated successfully!`);
       } else {
         await API.post('/customers/customers', payload);
-        showToast(`Patient profile "${form.name}" created successfully!`);
+        toast.success(`Patient profile "${form.name}" created successfully!`);
       }
       setShowModal(false);
       fetchCustomers();
     } catch (err) {
-      alert(err.response?.data?.message || 'Failed to save patient profile');
+      toast.error(err.response?.data?.message || 'Failed to save patient profile');
+    } finally {
+      setSubmitting(false);
     }
   };
 
   const handleDelete = async (customer) => {
-    if (!window.confirm(`Are you sure you want to delete patient profile "${customer.name}"?`)) return;
+    const confirmed = await toast.confirm({
+      title: 'Delete Patient Profile',
+      message: `Are you sure you want to delete patient profile "${customer.name}"? This action cannot be undone.`,
+      confirmText: 'Delete Profile',
+      cancelText: 'Cancel',
+      variant: 'danger'
+    });
+
+    if (!confirmed) return;
+
     try {
       await API.delete(`/customers/customers/${customer._id}`);
-      showToast(`Deleted patient profile "${customer.name}"`);
+      toast.success(`Deleted patient profile "${customer.name}"`);
       fetchCustomers();
     } catch (err) {
-      alert(err.response?.data?.message || 'Failed to delete customer profile');
+      toast.error(err.response?.data?.message || 'Failed to delete customer profile');
     }
   };
 
-  const filteredCustomers = customers.filter(c => 
-    c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    c.phone.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (c.email && c.email.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
+  const filteredCustomers = useMemo(() => {
+    return customers.filter((c) => {
+      const matchesSearch =
+        c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        c.phone.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (c.email && c.email.toLowerCase().includes(searchTerm.toLowerCase()));
+
+      const matchesGender =
+        genderFilter === 'all' || (c.gender || 'unspecified') === genderFilter;
+
+      return matchesSearch && matchesGender;
+    });
+  }, [customers, searchTerm, genderFilter]);
+
+  const columns = [
+    {
+      header: 'Patient Name & Email',
+      accessor: 'name',
+      render: (row) => (
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400 font-bold shrink-0">
+            {row.name ? row.name.charAt(0).toUpperCase() : 'P'}
+          </div>
+          <div>
+            <p className="font-bold text-slate-100 dark:text-slate-100 light:text-slate-900">
+              {row.name}
+            </p>
+            {row.email && (
+              <p className="text-xs text-slate-400 dark:text-slate-400 light:text-slate-500 font-normal">
+                {row.email}
+              </p>
+            )}
+          </div>
+        </div>
+      )
+    },
+    {
+      header: 'Phone Number',
+      accessor: 'phone',
+      render: (row) => (
+        <span className="font-mono text-purple-400 font-medium">{row.phone}</span>
+      )
+    },
+    {
+      header: 'Age / Gender',
+      render: (row) => {
+        const ageText =
+          row.age !== undefined && row.age !== null && row.age !== ''
+            ? `${row.age} yrs`
+            : 'N/A';
+        return (
+          <span className="text-slate-300 dark:text-slate-300 light:text-slate-700">
+            {ageText} / <span className="capitalize">{row.gender || 'unspecified'}</span>
+          </span>
+        );
+      }
+    },
+    {
+      header: 'Drug Allergies',
+      render: (row) => {
+        const allergyList = Array.isArray(row.allergies)
+          ? row.allergies
+          : typeof row.allergies === 'string' && row.allergies.trim()
+          ? row.allergies.split(',').map((a) => a.trim()).filter(Boolean)
+          : [];
+
+        if (allergyList.length === 0) {
+          return <Badge variant="neutral" size="sm">None Logged</Badge>;
+        }
+
+        return (
+          <div className="flex flex-wrap gap-1">
+            {allergyList.map((allergy, idx) => (
+              <Badge key={idx} variant="danger" size="sm" icon={ShieldAlert}>
+                {allergy}
+              </Badge>
+            ))}
+          </div>
+        );
+      }
+    },
+    {
+      header: 'Loyalty Points',
+      accessor: 'loyaltyPoints',
+      render: (row) => (
+        <Badge variant="success" size="md" icon={Award}>
+          {row.loyaltyPoints || 0} pts
+        </Badge>
+      )
+    },
+    {
+      header: 'Created Date',
+      render: (row) => (
+        <span className="text-slate-400 text-xs">
+          {new Date(row.createdAt || Date.now()).toLocaleDateString()}
+        </span>
+      )
+    },
+    {
+      header: 'Actions',
+      className: 'text-right',
+      render: (row) => (
+        <div className="flex items-center justify-end gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleOpenEditModal(row);
+            }}
+            title="Edit Patient Profile"
+          >
+            <Edit className="w-3.5 h-3.5 mr-1 text-purple-400" /> Edit
+          </Button>
+          <Button
+            variant="danger"
+            size="sm"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleDelete(row);
+            }}
+            title="Delete Patient Profile"
+          >
+            <Trash2 className="w-3.5 h-3.5 mr-1" /> Delete
+          </Button>
+        </div>
+      )
+    }
+  ];
 
   return (
     <div className="space-y-6">
-      {/* Toast Notification */}
-      {toast && (
-        <div className="fixed top-5 right-5 z-50 bg-emerald-600 text-white px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-3 animate-bounce">
-          <CheckCircle2 className="w-5 h-5" />
-          <span className="font-semibold text-sm">{toast}</span>
-        </div>
-      )}
-
       {/* Header Banner */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-900 border border-slate-800 p-5 rounded-2xl shadow-md">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-900/90 dark:bg-slate-900/90 light:bg-white border border-slate-800 dark:border-slate-800 light:border-slate-200 p-5 rounded-2xl shadow-xl">
         <div>
-          <h1 className="text-xl font-bold text-white flex items-center gap-2">
+          <h1 className="text-xl font-bold text-slate-100 dark:text-slate-100 light:text-slate-900 flex items-center gap-2">
             <Users className="w-6 h-6 text-purple-400" />
             Patients & Client Directory
           </h1>
-          <p className="text-xs text-slate-400">Track patient profiles, loyalty rewards, medical history, and dosage notes</p>
+          <p className="text-xs text-slate-400 dark:text-slate-400 light:text-slate-500 mt-0.5">
+            Track patient profiles, loyalty rewards, allergy alerts, and dosage history
+          </p>
         </div>
 
-        <button
-          onClick={handleOpenCreateModal}
-          className="bg-purple-600 hover:bg-purple-500 text-white text-xs font-semibold px-4 py-2.5 rounded-xl shadow-md flex items-center gap-1.5 cursor-pointer transition"
-        >
-          <Plus className="w-4 h-4" /> Add Patient Profile
-        </button>
+        <Button variant="primary" size="md" onClick={handleOpenCreateModal}>
+          <Plus className="w-4 h-4 mr-1.5" /> Add Patient Profile
+        </Button>
       </div>
 
-      {/* Search Filter Bar */}
-      <div className="bg-slate-900 border border-slate-800 p-4 rounded-2xl flex items-center gap-3">
-        <Search className="w-4 h-4 text-slate-500" />
-        <input
-          type="text"
-          placeholder="Search by Patient Name, Phone Number, or Email..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="bg-transparent text-xs text-slate-200 placeholder-slate-500 focus:outline-none w-full"
+      {/* Filter Toolbar */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-slate-900/60 dark:bg-slate-900/60 light:bg-white p-3.5 rounded-2xl border border-slate-800 dark:border-slate-800 light:border-slate-200">
+        <div className="sm:col-span-2">
+          <Input
+            type="text"
+            placeholder="Search by Patient Name, Phone Number, or Email..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            leftIcon={Search}
+            size="sm"
+          />
+        </div>
+
+        <div>
+          <Select
+            value={genderFilter}
+            onChange={(e) => setGenderFilter(e.target.value)}
+            size="sm"
+            options={[
+              { value: 'all', label: 'All Genders' },
+              { value: 'male', label: 'Male' },
+              { value: 'female', label: 'Female' },
+              { value: 'other', label: 'Other' },
+              { value: 'unspecified', label: 'Unspecified' }
+            ]}
+          />
+        </div>
+      </div>
+
+      {/* Patients Data Table */}
+      {loading ? (
+        <div className="bg-slate-900/80 dark:bg-slate-900/80 light:bg-white p-6 rounded-2xl border border-slate-800">
+          <Skeleton.Table rows={6} columns={6} />
+        </div>
+      ) : (
+        <DataTable
+          columns={columns}
+          data={filteredCustomers}
+          searchable={false}
+          pagination={true}
+          pageSize={10}
+          emptyMessage="No matching patient profiles found. Click '+ Add Patient Profile' to create one."
         />
-      </div>
-
-      {/* Patient Table */}
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-slate-800/60 text-slate-400 uppercase font-semibold border-b border-slate-800">
-              <tr>
-                <th className="py-3.5 px-4">Patient Name</th>
-                <th className="py-3.5 px-4">Phone Number</th>
-                <th className="py-3.5 px-4">Age / Gender</th>
-                <th className="py-3.5 px-4 text-center">Loyalty Points</th>
-                <th className="py-3.5 px-4">Created Date</th>
-                <th className="py-3.5 px-4 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-800/60 text-slate-300">
-              {filteredCustomers.map((c) => {
-                const ageText = (c.age !== undefined && c.age !== null && c.age !== '') ? `${c.age} yrs` : 'N/A';
-                return (
-                  <tr key={c._id} className="hover:bg-slate-800/40 transition-colors">
-                    <td className="py-3.5 px-4 font-bold text-white">
-                      <div>
-                        <p>{c.name}</p>
-                        {c.email && <p className="text-[10px] text-slate-400 font-normal">{c.email}</p>}
-                      </div>
-                    </td>
-                    <td className="py-3.5 px-4 font-mono text-purple-400">{c.phone}</td>
-                    <td className="py-3.5 px-4 text-slate-400">
-                      {ageText} / <span className="capitalize">{c.gender || 'unspecified'}</span>
-                    </td>
-                    <td className="py-3.5 px-4 text-center font-bold text-emerald-400">
-                      {c.loyaltyPoints || 0} pts
-                    </td>
-                    <td className="py-3.5 px-4 text-slate-400">{new Date(c.createdAt || Date.now()).toLocaleDateString()}</td>
-                    <td className="py-3.5 px-4 text-right space-x-2">
-                      <button
-                        onClick={() => handleOpenEditModal(c)}
-                        className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-purple-300 rounded-lg font-semibold text-xs transition cursor-pointer"
-                        title="Edit Patient Profile"
-                      >
-                        <Edit className="w-3.5 h-3.5 inline mr-1" /> Edit
-                      </button>
-                      <button
-                        onClick={() => handleDelete(c)}
-                        className="px-2.5 py-1 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-lg font-semibold text-xs transition cursor-pointer"
-                        title="Delete Patient Profile"
-                      >
-                        <Trash2 className="w-3.5 h-3.5 inline mr-1" /> Delete
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })}
-
-              {filteredCustomers.length === 0 && (
-                <tr>
-                  <td colSpan={6} className="text-center py-8 text-slate-500 text-xs">
-                    No matching patient profiles found. Click "+ Add Patient Profile" to create one.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      )}
 
       {/* Add / Edit Patient Modal */}
-      {showModal && (
-        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 text-slate-200 shadow-2xl space-y-4">
-            <div className="flex justify-between items-center border-b border-slate-800 pb-3">
-              <h2 className="text-base font-bold text-white flex items-center gap-2">
-                <Users className="w-5 h-5 text-purple-400" />
-                {editingCustomer ? 'Edit Patient Profile' : 'Create Patient Profile'}
-              </h2>
-              <button onClick={() => setShowModal(false)} className="text-slate-400 hover:text-white cursor-pointer">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
+      <Modal
+        isOpen={showModal}
+        onClose={() => setShowModal(false)}
+        title={editingCustomer ? 'Edit Patient Profile' : 'Create Patient Profile'}
+        description="Fill in patient details, loyalty points, and known drug allergy sensitivities."
+        size="lg"
+        footer={
+          <>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowModal(false)}
+              disabled={submitting}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={handleSubmit}
+              disabled={submitting}
+            >
+              {submitting
+                ? 'Saving...'
+                : editingCustomer
+                ? 'Update Profile'
+                : 'Save Profile'}
+            </Button>
+          </>
+        }
+      >
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <Input
+            label="Patient Full Name"
+            required
+            value={form.name}
+            onChange={(e) => setForm({ ...form, name: e.target.value })}
+            placeholder="Jane Doe"
+          />
 
-            <form onSubmit={handleSubmit} className="space-y-3.5 text-xs">
-              <div>
-                <label className="block font-semibold text-slate-300 uppercase text-[10px] mb-1">Patient Full Name *</label>
-                <input
-                  type="text"
-                  required
-                  value={form.name}
-                  onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  placeholder="Jane Doe"
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white focus:outline-none focus:border-purple-500"
-                />
-              </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Input
+              label="Phone Number"
+              required
+              value={form.phone}
+              onChange={(e) => setForm({ ...form, phone: e.target.value })}
+              placeholder="+1 555 9988"
+            />
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-semibold text-slate-300 uppercase text-[10px] mb-1">Phone Number *</label>
-                  <input
-                    type="text"
-                    required
-                    value={form.phone}
-                    onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                    placeholder="+1 555 9988"
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white font-mono focus:outline-none focus:border-purple-500"
-                  />
-                </div>
-                <div>
-                  <label className="block font-semibold text-slate-300 uppercase text-[10px] mb-1">Email Address</label>
-                  <input
-                    type="email"
-                    value={form.email}
-                    onChange={(e) => setForm({ ...form, email: e.target.value })}
-                    placeholder="patient@example.com"
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white focus:outline-none focus:border-purple-500"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-3 gap-3">
-                <div>
-                  <label className="block font-semibold text-slate-300 uppercase text-[10px] mb-1">Age (Years)</label>
-                  <input
-                    type="number"
-                    min="0"
-                    max="120"
-                    value={form.age}
-                    onChange={(e) => setForm({ ...form, age: e.target.value })}
-                    placeholder="30"
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white focus:outline-none focus:border-purple-500"
-                  />
-                </div>
-                <div>
-                  <label className="block font-semibold text-slate-300 uppercase text-[10px] mb-1">Gender</label>
-                  <select
-                    value={form.gender}
-                    onChange={(e) => setForm({ ...form, gender: e.target.value })}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white focus:outline-none focus:border-purple-500"
-                  >
-                    <option value="male">Male</option>
-                    <option value="female">Female</option>
-                    <option value="other">Other</option>
-                    <option value="unspecified">Unspecified</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block font-semibold text-slate-300 uppercase text-[10px] mb-1">Loyalty Points</label>
-                  <input
-                    type="number"
-                    min="0"
-                    value={form.loyaltyPoints}
-                    onChange={(e) => setForm({ ...form, loyaltyPoints: Number(e.target.value) })}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-emerald-400 font-bold focus:outline-none focus:border-purple-500"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block font-semibold text-slate-300 uppercase text-[10px] mb-1">Known Drug Allergies (Comma separated)</label>
-                <input
-                  type="text"
-                  value={form.allergies}
-                  onChange={(e) => setForm({ ...form, allergies: e.target.value })}
-                  placeholder="e.g. Penicillin, Aspirin, Sulfa drugs"
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white focus:outline-none focus:border-purple-500"
-                />
-              </div>
-
-              <div>
-                <label className="block font-semibold text-slate-300 uppercase text-[10px] mb-1">Medical Notes & Special Instructions</label>
-                <textarea
-                  rows={2}
-                  value={form.medicalNotes}
-                  onChange={(e) => setForm({ ...form, medicalNotes: e.target.value })}
-                  placeholder="Patient dosage sensitivities, chronic conditions..."
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white focus:outline-none focus:border-purple-500"
-                />
-              </div>
-
-              <div className="flex gap-3 pt-3">
-                <button
-                  type="button"
-                  onClick={() => setShowModal(false)}
-                  className="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold py-2.5 rounded-xl cursor-pointer transition"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold py-2.5 rounded-xl cursor-pointer transition shadow-md"
-                >
-                  {editingCustomer ? 'Update Profile' : 'Save Profile'}
-                </button>
-              </div>
-            </form>
+            <Input
+              label="Email Address"
+              type="email"
+              value={form.email}
+              onChange={(e) => setForm({ ...form, email: e.target.value })}
+              placeholder="patient@example.com"
+            />
           </div>
-        </div>
-      )}
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <Input
+              label="Age (Years)"
+              type="number"
+              min="0"
+              max="120"
+              value={form.age}
+              onChange={(e) => setForm({ ...form, age: e.target.value })}
+              placeholder="30"
+            />
+
+            <Select
+              label="Gender"
+              value={form.gender}
+              onChange={(e) => setForm({ ...form, gender: e.target.value })}
+              options={[
+                { value: 'male', label: 'Male' },
+                { value: 'female', label: 'Female' },
+                { value: 'other', label: 'Other' },
+                { value: 'unspecified', label: 'Unspecified' }
+              ]}
+            />
+
+            <Input
+              label="Loyalty Points"
+              type="number"
+              min="0"
+              value={form.loyaltyPoints}
+              onChange={(e) =>
+                setForm({ ...form, loyaltyPoints: Number(e.target.value) })
+              }
+            />
+          </div>
+
+          <Input
+            label="Known Drug Allergies"
+            value={form.allergies}
+            onChange={(e) => setForm({ ...form, allergies: e.target.value })}
+            placeholder="e.g. Penicillin, Aspirin, Sulfa drugs"
+            helperText="Separate multiple allergies with commas"
+          />
+
+          <Textarea
+            label="Medical Notes & Special Instructions"
+            rows={3}
+            value={form.medicalNotes}
+            onChange={(e) => setForm({ ...form, medicalNotes: e.target.value })}
+            placeholder="Patient dosage sensitivities, chronic conditions..."
+          />
+        </form>
+      </Modal>
     </div>
   );
 };

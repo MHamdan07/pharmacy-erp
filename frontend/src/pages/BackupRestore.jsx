@@ -4,8 +4,10 @@ import {
   Database, Download, RefreshCw, CheckCircle, ShieldAlert,
   HardDrive, Cloud, Clock, RotateCcw, FileJson, Sparkles
 } from 'lucide-react';
+import { Card, Button, Modal, Skeleton, Badge, Select, useToast } from '../components/ui';
 
 const BackupRestore = () => {
+  const toast = useToast();
   const [backups, setBackups] = useState([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
@@ -21,10 +23,11 @@ const BackupRestore = () => {
       setBackups(res.data || []);
     } catch (err) {
       console.error('Failed to load backup snapshots:', err);
+      toast.error('Failed to load backup snapshots');
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [toast]);
 
   useEffect(() => {
     fetchBackups();
@@ -34,10 +37,10 @@ const BackupRestore = () => {
     try {
       setActionLoading(true);
       const res = await API.post('/backups/create', { schedule, target });
-      alert(`Backup snapshot "${res.data.backupName}" created successfully.`);
+      toast.success(`Backup snapshot "${res.data.backupName}" created successfully.`);
       fetchBackups();
     } catch (err) {
-      alert(err.response?.data?.message || 'Failed to create database backup');
+      toast.error(err.response?.data?.message || 'Failed to create database backup');
     } finally {
       setActionLoading(false);
     }
@@ -47,77 +50,91 @@ const BackupRestore = () => {
     try {
       setActionLoading(true);
       const res = await API.post(`/backups/${backupId}/verify`);
-      alert(res.data.message);
+      toast.success(res.data.message || 'Backup snapshot verified successfully.');
       fetchBackups();
     } catch (err) {
-      alert(err.response?.data?.message || 'Backup verification failed');
+      toast.error(err.response?.data?.message || 'Backup verification failed');
     } finally {
       setActionLoading(false);
     }
   };
 
   const handleRestoreBackup = async (backup) => {
-    if (!window.confirm(`⚠️ CAUTION: Are you sure you want to restore database snapshot "${backup.backupName}"? Current state will be rolled back.`)) return;
+    const confirmed = await toast.confirm({
+      title: 'Restore Database Snapshot?',
+      message: `⚠️ CAUTION: Are you sure you want to restore database snapshot "${backup.backupName}"? Current state will be rolled back.`,
+      confirmText: 'Restore Snapshot',
+      cancelText: 'Cancel',
+      variant: 'danger',
+    });
+    if (!confirmed) return;
 
     try {
       setActionLoading(true);
       const res = await API.post(`/backups/${backup._id}/restore`);
-      alert(res.data.message);
+      toast.success(res.data.message || 'Backup restored successfully.');
       fetchBackups();
     } catch (err) {
-      alert(err.response?.data?.message || 'Backup restoration failed');
+      toast.error(err.response?.data?.message || 'Backup restoration failed');
     } finally {
       setActionLoading(false);
     }
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 font-sans text-slate-100">
 
       {/* Top Banner */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-900 border border-slate-800 p-5 rounded-2xl shadow-md">
+      <Card variant="glass" className="p-6 rounded-2xl bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 border border-slate-800 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-xl font-bold text-white flex items-center gap-2">
+          <h1 className="text-xl font-extrabold text-white tracking-tight flex items-center gap-2">
             <Database className="w-6 h-6 text-indigo-400" />
             Automated Database Backup & Snapshot Restore Engine
           </h1>
-          <p className="text-xs text-slate-400">Daily, weekly, and monthly automated backup schedules to local disk or cloud storage with 1-click verification</p>
+          <p className="text-xs text-slate-400 mt-1">
+            Daily, weekly, and monthly automated backup schedules to local disk or cloud storage with 1-click verification
+          </p>
         </div>
 
-        <div className="flex items-center gap-2">
-          <select
+        <div className="flex flex-wrap items-center gap-2.5">
+          <Select
             value={schedule}
             onChange={(e) => setSchedule(e.target.value)}
-            className="bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white"
-          >
-            <option value="manual">Manual Snapshot</option>
-            <option value="daily">Daily Cron Schedule</option>
-            <option value="weekly">Weekly Cron Schedule</option>
-            <option value="monthly">Monthly Cron Schedule</option>
-          </select>
+            className="text-xs max-w-[170px]"
+            options={[
+              { value: 'manual', label: 'Manual Snapshot' },
+              { value: 'daily', label: 'Daily Cron Schedule' },
+              { value: 'weekly', label: 'Weekly Cron Schedule' },
+              { value: 'monthly', label: 'Monthly Cron Schedule' },
+            ]}
+          />
 
-          <select
+          <Select
             value={target}
             onChange={(e) => setTarget(e.target.value)}
-            className="bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white"
-          >
-            <option value="local">Local Storage</option>
-            <option value="cloud">Cloud Storage (S3)</option>
-          </select>
+            className="text-xs max-w-[150px]"
+            options={[
+              { value: 'local', label: 'Local Storage' },
+              { value: 'cloud', label: 'Cloud Storage (S3)' },
+            ]}
+          />
 
-          <button
+          <Button
+            variant="primary"
+            size="md"
+            leftIcon={Database}
+            loading={actionLoading}
             onClick={handleCreateBackup}
-            disabled={actionLoading}
-            className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold px-4 py-2.5 rounded-xl shadow-md flex items-center gap-1.5 cursor-pointer"
+            className="bg-indigo-600 hover:bg-indigo-500 shadow-lg shadow-indigo-500/20"
           >
-            <Database className="w-4 h-4" /> Create Backup Now
-          </button>
+            Create Backup Now
+          </Button>
         </div>
-      </div>
+      </Card>
 
       {/* Backup Schedule Status Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="bg-slate-900 border border-slate-800 p-4 rounded-2xl shadow-md flex items-center justify-between">
+        <Card variant="glass" className="p-5 flex items-center justify-between">
           <div>
             <div className="text-xs text-slate-400 font-medium">Daily Schedule</div>
             <div className="text-lg font-bold text-emerald-400 mt-1 flex items-center gap-1">
@@ -127,9 +144,9 @@ const BackupRestore = () => {
           <div className="w-10 h-10 bg-emerald-500/10 text-emerald-400 rounded-xl flex items-center justify-center border border-emerald-500/20">
             <Clock className="w-5 h-5" />
           </div>
-        </div>
+        </Card>
 
-        <div className="bg-slate-900 border border-slate-800 p-4 rounded-2xl shadow-md flex items-center justify-between">
+        <Card variant="glass" className="p-5 flex items-center justify-between">
           <div>
             <div className="text-xs text-slate-400 font-medium">Weekly / Monthly</div>
             <div className="text-lg font-bold text-blue-400 mt-1 flex items-center gap-1">
@@ -139,9 +156,9 @@ const BackupRestore = () => {
           <div className="w-10 h-10 bg-blue-500/10 text-blue-400 rounded-xl flex items-center justify-center border border-blue-500/20">
             <Cloud className="w-5 h-5" />
           </div>
-        </div>
+        </Card>
 
-        <div className="bg-slate-900 border border-slate-800 p-4 rounded-2xl shadow-md flex items-center justify-between">
+        <Card variant="glass" className="p-5 flex items-center justify-between">
           <div>
             <div className="text-xs text-slate-400 font-medium">Total Backups Stored</div>
             <div className="text-lg font-bold text-white mt-1">{backups.length} Snapshots</div>
@@ -149,11 +166,11 @@ const BackupRestore = () => {
           <div className="w-10 h-10 bg-slate-800 text-slate-300 rounded-xl flex items-center justify-center border border-slate-700">
             <HardDrive className="w-5 h-5" />
           </div>
-        </div>
+        </Card>
       </div>
 
       {/* Backups List Table */}
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
+      <Card variant="glass" className="p-6 space-y-4">
         <div className="flex justify-between items-center border-b border-slate-800 pb-3">
           <h2 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
             <FileJson className="w-4 h-4 text-indigo-400" />
@@ -162,7 +179,7 @@ const BackupRestore = () => {
         </div>
 
         {loading ? (
-          <div className="p-8 text-center text-slate-400 text-xs">Loading backup snapshots...</div>
+          <Skeleton.Table rows={4} columns={6} />
         ) : backups.length === 0 ? (
           <div className="text-center py-12 text-slate-500 text-xs italic">
             No backup snapshots found. Click "Create Backup Now" to create your first database backup.
@@ -170,7 +187,7 @@ const BackupRestore = () => {
         ) : (
           <div className="overflow-x-auto max-h-[500px] overflow-y-auto pr-1">
             <table className="w-full text-left text-xs min-w-[850px]">
-              <thead className="bg-slate-800/90 text-slate-400 uppercase font-semibold border-b border-slate-800 sticky top-0 z-10 backdrop-blur-md">
+              <thead className="bg-slate-900 text-slate-400 uppercase font-semibold border-b border-slate-800 sticky top-0 z-10 backdrop-blur-md">
                 <tr>
                   <th className="py-3 px-4">Backup Name</th>
                   <th className="py-3 px-4">Schedule</th>
@@ -194,31 +211,33 @@ const BackupRestore = () => {
                       <div className="text-[10px] text-slate-400">{b.recordCount} docs</div>
                     </td>
                     <td className="py-3 px-4">
-                      <span className={`px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase ${
-                        b.status === 'verified'
-                          ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                          : b.status === 'restored'
-                          ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
-                          : 'bg-red-500/20 text-red-400'
-                      }`}>
+                      <Badge
+                        variant={b.status === 'verified' ? 'success' : b.status === 'restored' ? 'info' : 'danger'}
+                        size="sm"
+                      >
                         {b.status}
-                      </span>
+                      </Badge>
                     </td>
                     <td className="py-3 px-4 text-right">
                       <div className="flex items-center justify-end space-x-2">
-                        <button
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          disabled={actionLoading}
                           onClick={() => handleVerifyBackup(b._id)}
-                          className="bg-slate-800 hover:bg-slate-700 text-emerald-400 font-semibold px-2.5 py-1 rounded-lg border border-slate-700 cursor-pointer text-[11px]"
-                          title="Verify Integrity"
+                          className="text-emerald-400 hover:text-emerald-300"
                         >
                           Verify
-                        </button>
-                        <button
+                        </Button>
+                        <Button
+                          variant="danger"
+                          size="sm"
+                          leftIcon={RotateCcw}
+                          disabled={actionLoading}
                           onClick={() => handleRestoreBackup(b)}
-                          className="bg-rose-600 hover:bg-rose-500 text-white font-bold px-2.5 py-1 rounded-lg cursor-pointer text-[11px] flex items-center gap-1"
                         >
-                          <RotateCcw className="w-3 h-3" /> Restore
-                        </button>
+                          Restore
+                        </Button>
                       </div>
                     </td>
                   </tr>
@@ -227,7 +246,7 @@ const BackupRestore = () => {
             </table>
           </div>
         )}
-      </div>
+      </Card>
 
     </div>
   );

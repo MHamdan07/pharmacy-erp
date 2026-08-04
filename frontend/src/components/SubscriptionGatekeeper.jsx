@@ -7,17 +7,15 @@ import {
 } from 'lucide-react';
 
 import { useAuth } from '../context/AuthContext';
+import { useToast } from './ui';
 
 const SubscriptionGatekeeper = () => {
   const { user } = useAuth();
+  const toast = useToast();
   const [subData, setSubData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showReactivateModal, setShowReactivateModal] = useState(false);
   const navigate = useNavigate();
-
-  if (user?.role === 'SuperAdmin') {
-    return <Outlet />;
-  }
 
   const fetchSubscriptionGate = useCallback(async () => {
     try {
@@ -32,19 +30,25 @@ const SubscriptionGatekeeper = () => {
   }, []);
 
   useEffect(() => {
-    fetchSubscriptionGate();
-  }, [fetchSubscriptionGate]);
+    if (user?.role !== 'SuperAdmin') {
+      fetchSubscriptionGate();
+    }
+  }, [user?.role, fetchSubscriptionGate]);
 
   const handleReactivateConfirm = async () => {
     try {
       await API.post('/subscriptions/reactivate-subscription');
       setShowReactivateModal(false);
       fetchSubscriptionGate();
-      alert('Subscription reactivated successfully!');
+      toast.success('Subscription reactivated successfully!');
     } catch (err) {
-      alert(err.response?.data?.message || 'Failed to reactivate subscription.');
+      toast.error(err.response?.data?.message || 'Failed to reactivate subscription.');
     }
   };
+
+  if (user?.role === 'SuperAdmin') {
+    return <Outlet />;
+  }
 
   if (loading) {
     return (

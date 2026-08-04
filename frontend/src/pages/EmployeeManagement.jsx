@@ -1,11 +1,14 @@
 import { useState, useEffect, useCallback } from 'react';
 import API from '../api/axios';
-import { Users, UserPlus, Clock, ShieldCheck, Search, Building2, CheckCircle2, User } from 'lucide-react';
+import { Users, UserPlus, Clock, Search, CheckCircle2 } from 'lucide-react';
+import { Card, Button, Modal, Badge, Input, Select, Skeleton, useToast } from '../components/ui';
 
 const EmployeeManagement = () => {
+  const toast = useToast();
   const [employees, setEmployees] = useState([]);
   const [stats, setStats] = useState({ totalStaff: 0, activeStaff: 0, morningShift: 0 });
   const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
   const [formData, setFormData] = useState({
@@ -25,10 +28,11 @@ const EmployeeManagement = () => {
       setStats(res.data.stats || { totalStaff: 0, activeStaff: 0, morningShift: 0 });
     } catch (err) {
       console.error('Failed to load employees:', err);
+      toast.error('Failed to load employee roster.');
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [toast]);
 
   useEffect(() => {
     fetchEmployees();
@@ -37,12 +41,16 @@ const EmployeeManagement = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      setSubmitting(true);
       await API.post('/employees', formData);
+      toast.success(`Staff member "${formData.name}" added successfully!`);
       setShowAddModal(false);
       setFormData({ name: '', email: '', phone: '', role: 'Cashier', shift: 'Morning', salary: 2500 });
       fetchEmployees();
     } catch (err) {
-      alert(err.response?.data?.message || 'Failed to create employee');
+      toast.error(err.response?.data?.message || 'Failed to create employee');
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -55,204 +63,200 @@ const EmployeeManagement = () => {
   return (
     <div className="space-y-6 font-sans text-slate-100">
       {/* Top Header Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-900 border border-slate-800 p-6 rounded-3xl shadow-xl">
+      <Card variant="glass" className="p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-xl font-bold text-white flex items-center gap-2">
             <Users className="w-6 h-6 text-blue-400" />
-            25 Employee Management & Staff Shift Operations
+            Employee Management & Staff Shift Operations
           </h1>
           <p className="text-xs text-slate-400 mt-0.5">Manage pharmacy staff roster, shift schedules, roles, and branch assignments</p>
         </div>
-        <button
+        <Button
+          variant="primary"
+          size="md"
+          leftIcon={UserPlus}
           onClick={() => setShowAddModal(true)}
-          className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-medium text-xs rounded-xl shadow-lg transition"
+          className="shadow-lg shadow-blue-500/20"
         >
-          <UserPlus className="w-4 h-4" />
           Add New Staff
-        </button>
-      </div>
+        </Button>
+      </Card>
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-slate-900 border border-slate-800 p-5 rounded-2xl flex items-center gap-4">
-          <div className="p-3 bg-blue-500/10 text-blue-400 rounded-xl">
+        <Card variant="glass" className="p-5 flex items-center gap-4">
+          <div className="p-3 bg-blue-500/10 text-blue-400 rounded-xl border border-blue-500/20">
             <Users className="w-6 h-6" />
           </div>
           <div>
             <p className="text-xs text-slate-400">Total Staff Roster</p>
             <p className="text-2xl font-bold text-white">{stats.totalStaff}</p>
           </div>
-        </div>
+        </Card>
 
-        <div className="bg-slate-900 border border-slate-800 p-5 rounded-2xl flex items-center gap-4">
-          <div className="p-3 bg-emerald-500/10 text-emerald-400 rounded-xl">
+        <Card variant="glass" className="p-5 flex items-center gap-4">
+          <div className="p-3 bg-emerald-500/10 text-emerald-400 rounded-xl border border-emerald-500/20">
             <CheckCircle2 className="w-6 h-6" />
           </div>
           <div>
             <p className="text-xs text-slate-400">Active Staff</p>
             <p className="text-2xl font-bold text-white">{stats.activeStaff}</p>
           </div>
-        </div>
+        </Card>
 
-        <div className="bg-slate-900 border border-slate-800 p-5 rounded-2xl flex items-center gap-4">
-          <div className="p-3 bg-purple-500/10 text-purple-400 rounded-xl">
+        <Card variant="glass" className="p-5 flex items-center gap-4">
+          <div className="p-3 bg-purple-500/10 text-purple-400 rounded-xl border border-purple-500/20">
             <Clock className="w-6 h-6" />
           </div>
           <div>
             <p className="text-xs text-slate-400">Morning Shift Staff</p>
             <p className="text-2xl font-bold text-white">{stats.morningShift}</p>
           </div>
-        </div>
+        </Card>
       </div>
 
       {/* Search Input */}
-      <div className="relative">
-        <Search className="w-4 h-4 text-slate-400 absolute left-4 top-3.5" />
-        <input
-          type="text"
-          placeholder="Search employees by name, email, or role..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full bg-slate-900 border border-slate-800 rounded-2xl pl-11 pr-4 py-3 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
-        />
-      </div>
+      <Input
+        type="text"
+        leftIcon={Search}
+        placeholder="Search employees by name, email, or role..."
+        value={searchTerm}
+        onChange={(e) => setSearchTerm(e.target.value)}
+        className="w-full"
+      />
 
       {/* Staff Table */}
-      <div className="bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden shadow-xl">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs border-collapse">
-            <thead>
-              <tr className="bg-slate-950/80 text-slate-400 border-b border-slate-800 uppercase tracking-wider font-semibold">
-                <th className="p-4">Employee Name</th>
-                <th className="p-4">Role</th>
-                <th className="p-4">Shift Schedule</th>
-                <th className="p-4">Contact</th>
-                <th className="p-4">Base Salary</th>
-                <th className="p-4">Status</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-800/50">
-              {loading ? (
-                <tr>
-                  <td colSpan="6" className="p-8 text-center text-slate-400">Loading employee roster...</td>
+      <Card variant="glass" className="p-0 overflow-hidden">
+        {loading ? (
+          <div className="p-6">
+            <Skeleton.Table rows={5} columns={6} />
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr className="bg-slate-950/80 text-slate-400 border-b border-slate-800 uppercase tracking-wider font-semibold">
+                  <th className="p-4">Employee Name</th>
+                  <th className="p-4">Role</th>
+                  <th className="p-4">Shift Schedule</th>
+                  <th className="p-4">Contact</th>
+                  <th className="p-4">Base Salary</th>
+                  <th className="p-4">Status</th>
                 </tr>
-              ) : filteredEmployees.length === 0 ? (
-                <tr>
-                  <td colSpan="6" className="p-8 text-center text-slate-400">No employees found.</td>
-                </tr>
-              ) : (
-                filteredEmployees.map((emp) => (
-                  <tr key={emp._id} className="hover:bg-slate-800/40 transition">
-                    <td className="p-4 font-medium text-white flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-blue-400 font-bold">
-                        {emp.name.charAt(0)}
-                      </div>
-                      <div>
-                        <p className="font-semibold text-white">{emp.name}</p>
-                        <p className="text-[10px] text-slate-400">{emp.email}</p>
-                      </div>
-                    </td>
-                    <td className="p-4">
-                      <span className="px-2.5 py-1 bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded-lg text-[10px] font-semibold">
-                        {emp.role}
-                      </span>
-                    </td>
-                    <td className="p-4 text-slate-300 flex items-center gap-1.5 mt-2">
-                      <Clock className="w-3.5 h-3.5 text-purple-400" />
-                      {emp.shift}
-                    </td>
-                    <td className="p-4 text-slate-400">{emp.phone || 'N/A'}</td>
-                    <td className="p-4 font-semibold text-emerald-400">${emp.salary}</td>
-                    <td className="p-4">
-                      <span className="px-2 py-0.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-full text-[10px]">
-                        Active
-                      </span>
-                    </td>
+              </thead>
+              <tbody className="divide-y divide-slate-800/50">
+                {filteredEmployees.length === 0 ? (
+                  <tr>
+                    <td colSpan="6" className="p-8 text-center text-slate-400">No employees found.</td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
+                ) : (
+                  filteredEmployees.map((emp) => (
+                    <tr key={emp._id} className="hover:bg-slate-800/40 transition">
+                      <td className="p-4 font-medium text-white flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-blue-400 font-bold shrink-0">
+                          {emp.name.charAt(0)}
+                        </div>
+                        <div>
+                          <p className="font-semibold text-white">{emp.name}</p>
+                          <p className="text-[10px] text-slate-400">{emp.email}</p>
+                        </div>
+                      </td>
+                      <td className="p-4">
+                        <Badge variant="info" size="sm">{emp.role}</Badge>
+                      </td>
+                      <td className="p-4 text-slate-300">
+                        <span className="flex items-center gap-1.5">
+                          <Clock className="w-3.5 h-3.5 text-purple-400" />
+                          {emp.shift}
+                        </span>
+                      </td>
+                      <td className="p-4 text-slate-400">{emp.phone || 'N/A'}</td>
+                      <td className="p-4 font-semibold text-emerald-400">${emp.salary}</td>
+                      <td className="p-4">
+                        <Badge variant="success" size="sm">Active</Badge>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Card>
 
       {/* Add Employee Modal */}
-      {showAddModal && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 w-full max-w-md space-y-4 shadow-2xl">
-            <h2 className="text-lg font-bold text-white flex items-center gap-2">
-              <UserPlus className="w-5 h-5 text-blue-400" />
-              Add New Staff Member
-            </h2>
-            <form onSubmit={handleSubmit} className="space-y-3">
-              <div>
-                <label className="text-[11px] text-slate-400 block mb-1">Full Name</label>
-                <input
-                  type="text"
-                  required
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white"
-                />
-              </div>
-              <div>
-                <label className="text-[11px] text-slate-400 block mb-1">Email Address</label>
-                <input
-                  type="email"
-                  required
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="text-[11px] text-slate-400 block mb-1">Role</label>
-                  <select
-                    value={formData.role}
-                    onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white"
-                  >
-                    <option value="Cashier">Cashier</option>
-                    <option value="Pharmacist">Pharmacist</option>
-                    <option value="Manager">Manager</option>
-                    <option value="Inventory Staff">Inventory Staff</option>
-                    <option value="Delivery Staff">Delivery Staff</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="text-[11px] text-slate-400 block mb-1">Shift</label>
-                  <select
-                    value={formData.shift}
-                    onChange={(e) => setFormData({ ...formData, shift: e.target.value })}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white"
-                  >
-                    <option value="Morning">Morning</option>
-                    <option value="Evening">Evening</option>
-                    <option value="Night">Night</option>
-                    <option value="Flexible">Flexible</option>
-                  </select>
-                </div>
-              </div>
-              <div className="flex justify-end gap-2 pt-4">
-                <button
-                  type="button"
-                  onClick={() => setShowAddModal(false)}
-                  className="px-4 py-2 bg-slate-800 text-slate-300 text-xs rounded-xl hover:bg-slate-700"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-blue-600 text-white text-xs rounded-xl hover:bg-blue-500 font-semibold"
-                >
-                  Save Employee
-                </button>
-              </div>
-            </form>
+      <Modal
+        isOpen={showAddModal}
+        onClose={() => setShowAddModal(false)}
+        title="Add New Staff Member"
+        size="md"
+      >
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <Input
+            label="Full Name"
+            type="text"
+            required
+            value={formData.name}
+            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+            placeholder="John Doe"
+          />
+
+          <Input
+            label="Email Address"
+            type="email"
+            required
+            value={formData.email}
+            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+            placeholder="john@pharmacy.com"
+          />
+
+          <div className="grid grid-cols-2 gap-3">
+            <Select
+              label="Role"
+              value={formData.role}
+              onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+              options={[
+                { value: 'Cashier', label: 'Cashier' },
+                { value: 'Pharmacist', label: 'Pharmacist' },
+                { value: 'Manager', label: 'Manager' },
+                { value: 'Inventory Staff', label: 'Inventory Staff' },
+                { value: 'Delivery Staff', label: 'Delivery Staff' }
+              ]}
+            />
+
+            <Select
+              label="Shift"
+              value={formData.shift}
+              onChange={(e) => setFormData({ ...formData, shift: e.target.value })}
+              options={[
+                { value: 'Morning', label: 'Morning' },
+                { value: 'Evening', label: 'Evening' },
+                { value: 'Night', label: 'Night' },
+                { value: 'Flexible', label: 'Flexible' }
+              ]}
+            />
           </div>
-        </div>
-      )}
+
+          <div className="flex justify-end gap-2 pt-4 border-t border-slate-800">
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              onClick={() => setShowAddModal(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              variant="primary"
+              size="sm"
+              loading={submitting}
+            >
+              Save Employee
+            </Button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 };

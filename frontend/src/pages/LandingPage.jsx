@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Building2,
@@ -15,15 +14,11 @@ import {
   BarChart3,
   Smartphone,
   PhoneCall,
-  Mail,
   HelpCircle,
-  Star,
   Users
 } from 'lucide-react';
 
 const LandingPage = () => {
-  const [selectedPlan, setSelectedPlan] = useState('Professional');
-  const [faqOpen, setFaqOpen] = useState(null);
 
   const features = [
     { title: 'Multi-Company Support', desc: 'Manage independent corporate entities and multi-tenant billing from one dashboard.', icon: Building2 },
