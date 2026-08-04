@@ -94,7 +94,7 @@ export const registerTenant = async (req, res) => {
   }
 };
 
-// Create a new branch for an existing Pharmacy
+// Create a new branch for an existing Pharmacy (Enforces Subscription Plan Limits)
 export const createBranch = async (req, res) => {
   const { name, code, phone, address, receiptHeader, receiptFooter } = req.body;
 
@@ -104,6 +104,25 @@ export const createBranch = async (req, res) => {
       return res.status(400).json({ message: `Branch code '${code}' already exists in this pharmacy.` });
     }
 
+    // 1. Check Subscription Plan Branch Limits
+    const currentBranchCount = await Branch.countDocuments({ pharmacy: req.pharmacyId });
+    const pharmacy = await Pharmacy.findById(req.pharmacyId);
+
+    const planLimits = {
+      Starter: 1,
+      Professional: 3,
+      Enterprise: 10,
+      Unlimited: 999
+    };
+    const maxAllowed = planLimits[pharmacy?.plan || 'Professional'] || 3;
+
+    if (currentBranchCount >= maxAllowed) {
+      return res.status(403).json({
+        message: `Branch creation limit reached (${currentBranchCount}/${maxAllowed}) for your ${pharmacy?.plan || 'Professional'} subscription plan. Please upgrade your subscription plan to add more branches.`
+      });
+    }
+
+    // 2. Create New Branch
     const branch = await Branch.create({
       name,
       code: code.toUpperCase(),
@@ -114,6 +133,13 @@ export const createBranch = async (req, res) => {
       receiptFooter: receiptFooter || 'Get well soon!'
     });
 
+    // 3. Auto-assign new branch to Pharmacy Owner(s)
+    await User.updateMany(
+      { pharmacy: req.pharmacyId, role: 'Owner' },
+      { $addToSet: { assignedBranches: branch._id } }
+    );
+
+    // 4. Log Audit Trail
     await AuditLog.create({
       pharmacy: req.pharmacyId,
       branch: branch._id,
@@ -121,7 +147,7 @@ export const createBranch = async (req, res) => {
       userName: req.userFull.name,
       action: 'BRANCH_CREATED',
       module: 'Tenant Management',
-      details: `Created new branch "${branch.name}" (${branch.code})`
+      details: `Created new branch "${branch.name}" (${branch.code}). Branch count is now ${currentBranchCount + 1}/${maxAllowed}.`
     });
 
     res.status(201).json(branch);
@@ -198,10 +224,26 @@ export const deleteBranch = async (req, res) => {
   }
 };
 
-// Get all branches of current Pharmacy
+// Get branches of current Pharmacy (Filtered by Role permissions)
 export const getBranches = async (req, res) => {
   try {
-    const branches = await Branch.find({ pharmacy: req.pharmacyId }).sort({ createdAt: 1 });
+    let branches;
+    if (['Owner', 'SuperAdmin'].includes(req.userFull?.role)) {
+      // Pharmacy Owner or System SuperAdmin sees all branches of this pharmacy
+      branches = await Branch.find({ pharmacy: req.pharmacyId }).sort({ createdAt: 1 });
+    } else {
+      // Non-owner staff (Branch Manager, Pharmacist, Cashier, etc.) ONLY see branches assigned to them
+      const assignedIds = [
+        req.userFull?.branch?._id || req.userFull?.branch,
+        ...(req.userFull?.assignedBranches || []).map(b => b._id || b)
+      ].filter(Boolean);
+
+      branches = await Branch.find({
+        pharmacy: req.pharmacyId,
+        _id: { $in: assignedIds }
+      }).sort({ createdAt: 1 });
+    }
+
     res.json(branches);
   } catch (error) {
     res.status(500).json({ message: error.message });

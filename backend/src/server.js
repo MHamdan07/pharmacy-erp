@@ -116,7 +116,7 @@ app.use((err, req, res, next) => {
 
 // Start Server (only if not running on Vercel)
 if (!process.env.VERCEL) {
-  app.listen(PORT, () => {
+  app.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 Multi-Tenant Pharmacy ERP Server running on port ${PORT}`);
   });
 }

@@ -18,12 +18,26 @@ export const AuthProvider = ({ children }) => {
       const res = await API.get('/tenants/branches');
       setBranches(res.data || []);
 
+      const isOwnerOrSuperAdmin = ['Owner', 'SuperAdmin'].includes(userObj?.role);
       const userBranch = userObj?.branch?._id || userObj?.branch;
-      const initialBranch = localStorage.getItem('activeBranchId') || userBranch || (res.data[0]?._id);
 
-      if (initialBranch) {
-        setActiveBranchId(initialBranch);
-        localStorage.setItem('activeBranchId', initialBranch);
+      let targetBranch = userBranch;
+
+      if (isOwnerOrSuperAdmin) {
+        const storedBranch = localStorage.getItem('activeBranchId');
+        if (storedBranch && res.data?.some(b => b._id === storedBranch)) {
+          targetBranch = storedBranch;
+        } else if (res.data?.[0]?._id) {
+          targetBranch = res.data[0]._id;
+        }
+      } else {
+        // Non-owner staff: ALWAYS force activeBranchId to their assigned primary branch
+        targetBranch = userBranch || (res.data?.[0]?._id);
+      }
+
+      if (targetBranch) {
+        setActiveBranchId(targetBranch);
+        localStorage.setItem('activeBranchId', targetBranch);
       }
     } catch (err) {
       console.error('Failed to fetch tenant branches:', err);
@@ -96,6 +110,11 @@ export const AuthProvider = ({ children }) => {
   };
 
   const switchBranch = (branchId) => {
+    const isOwnerOrSuperAdmin = ['Owner', 'SuperAdmin'].includes(user?.role);
+    if (!isOwnerOrSuperAdmin) {
+      console.warn('Branch switching is restricted to pharmacy owners.');
+      return;
+    }
     setActiveBranchId(branchId);
     localStorage.setItem('activeBranchId', branchId);
     window.location.reload();

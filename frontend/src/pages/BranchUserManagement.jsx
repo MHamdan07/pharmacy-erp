@@ -1,10 +1,15 @@
 import { useState, useEffect, useCallback } from 'react';
 import API from '../api/axios';
-import { Building2, UserPlus, Shield, Store, Plus, Check, Edit, Trash2 } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import { Building2, UserPlus, Shield, Store, Plus, Check, Edit, Trash2, ShieldAlert, CreditCard } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 const BranchUserManagement = () => {
+  const { user } = useAuth();
+  const isCompanyOwner = user?.role === 'Owner';
   const [branches, setBranches] = useState([]);
   const [users, setUsers] = useState([]);
+  const [subscription, setSubscription] = useState(null);
   const [showBranchModal, setShowBranchModal] = useState(false);
   const [showUserModal, setShowUserModal] = useState(false);
 
@@ -69,95 +74,36 @@ const BranchUserManagement = () => {
     }
   }, []);
 
+  const fetchSubscription = useCallback(async () => {
+    try {
+      const res = await API.get('/subscriptions/my-subscription');
+      if (res.data) setSubscription(res.data.subscription || {});
+    } catch (err) {
+      console.error('Failed to fetch subscription:', err);
+    }
+  }, []);
+
   useEffect(() => {
-    fetchBranches();
-    fetchUsers();
-  }, [fetchBranches, fetchUsers]);
-
-  const handleCreateBranch = async (e) => {
-    e.preventDefault();
-    try {
-      await API.post('/tenants/branches', branchForm);
-      setShowBranchModal(false);
+    if (isCompanyOwner) {
       fetchBranches();
-    } catch (err) {
-      alert(err.response?.data?.message || 'Failed to create branch');
-    }
-  };
-
-  const handleOpenEditBranch = (b) => {
-    setEditingBranch(b);
-    setEditBranchForm({
-      name: b.name || '',
-      code: b.code || '',
-      phone: b.phone || '',
-      address: b.address || '',
-      receiptHeader: b.receiptHeader || 'Thank you for visiting!',
-      receiptFooter: b.receiptFooter || 'Get well soon!'
-    });
-    setShowEditBranchModal(true);
-  };
-
-  const handleSaveEditBranch = async (e) => {
-    e.preventDefault();
-    try {
-      await API.put(`/tenants/branches/${editingBranch._id}`, editBranchForm);
-      setShowEditBranchModal(false);
-      setEditingBranch(null);
-      fetchBranches();
-    } catch (err) {
-      alert(err.response?.data?.message || 'Failed to update branch details');
-    }
-  };
-
-  const handleDeleteBranch = async (branchId, branchName) => {
-    if (!window.confirm(`Are you sure you want to DELETE branch "${branchName}"?`)) return;
-    try {
-      await API.delete(`/tenants/branches/${branchId}`);
-      if (editingBranch?._id === branchId) {
-        setShowEditBranchModal(false);
-        setEditingBranch(null);
-      }
-      fetchBranches();
-    } catch (err) {
-      alert(err.response?.data?.message || 'Failed to delete branch');
-    }
-  };
-
-  const handleCreateUser = async (e) => {
-    e.preventDefault();
-    try {
-      await API.post('/auth/register-staff', userForm);
-      setShowUserModal(false);
       fetchUsers();
-    } catch (err) {
-      alert(err.response?.data?.message || 'Failed to register staff member');
+      fetchSubscription();
     }
-  };
+  }, [isCompanyOwner, fetchBranches, fetchUsers, fetchSubscription]);
 
-  const handleOpenEditUser = (staff) => {
-    setEditingUser(staff);
-    setEditUserForm({
-      name: staff.name || '',
-      email: staff.email || '',
-      role: staff.role || 'Pharmacist',
-      branchId: staff.branch?._id || staff.branch || '',
-      isActive: staff.isActive !== false
-    });
-    setShowEditModal(true);
-  };
+  if (!isCompanyOwner) {
+    return (
+      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-8 text-center max-w-lg mx-auto mt-12 shadow-2xl space-y-4">
+        <ShieldAlert className="w-12 h-12 text-rose-500 mx-auto" />
+        <h2 className="text-lg font-bold text-white">Access Restricted to Company Owner</h2>
+        <p className="text-xs text-slate-400">
+          Multi-branch store administration and staff management can only be accessed by the Company Owner.
+        </p>
+      </div>
+    );
+  }
 
-  const handleSaveEditUser = async (e) => {
-    e.preventDefault();
-    try {
-      await API.put(`/auth/users/${editingUser._id}`, editUserForm);
-      setShowEditModal(false);
-      setEditingUser(null);
-      fetchUsers();
-    } catch (err) {
-      alert(err.response?.data?.message || 'Failed to update staff member');
-    }
-  };
+  const planMaxBranches = subscription?.planName === 'Starter' ? 1 : subscription?.planName === 'Enterprise' ? 10 : 3;
 
   return (
     <div className="space-y-6">
@@ -169,16 +115,27 @@ const BranchUserManagement = () => {
             <Building2 className="w-6 h-6 text-blue-400" />
             Branch Stores & Staff Role Administration
           </h1>
-          <p className="text-xs text-slate-400">Manage multi-branch organization, staff permissions, and active store locations</p>
+          <p className="text-xs text-slate-400">
+            Current Plan: <span className="text-blue-400 font-bold">{subscription?.planName || 'Professional'}</span> ({branches.length} / {planMaxBranches} Branches Used)
+          </p>
         </div>
 
         <div className="flex items-center gap-2">
-          <button
-            onClick={() => setShowBranchModal(true)}
-            className="bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold px-4 py-2.5 rounded-xl shadow-md flex items-center gap-1.5 cursor-pointer"
-          >
-            <Plus className="w-4 h-4" /> Add Branch Location
-          </button>
+          {branches.length >= planMaxBranches ? (
+            <Link
+              to="/settings/subscription"
+              className="bg-amber-600 hover:bg-amber-500 text-white text-xs font-semibold px-4 py-2.5 rounded-xl shadow-md flex items-center gap-1.5 cursor-pointer"
+            >
+              <CreditCard className="w-4 h-4" /> Upgrade Plan to Add Branch
+            </Link>
+          ) : (
+            <button
+              onClick={() => setShowBranchModal(true)}
+              className="bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold px-4 py-2.5 rounded-xl shadow-md flex items-center gap-1.5 cursor-pointer"
+            >
+              <Plus className="w-4 h-4" /> Add Branch Location
+            </button>
+          )}
           <button
             onClick={() => setShowUserModal(true)}
             className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold px-4 py-2.5 rounded-xl shadow-md flex items-center gap-1.5 cursor-pointer"

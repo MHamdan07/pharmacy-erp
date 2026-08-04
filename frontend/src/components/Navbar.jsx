@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { Building2, Store, LogOut, ShieldCheck, Sun, Moon, Palette } from 'lucide-react';
 import NotificationBell from './NotificationBell';
+import LanguageSwitcher from './LanguageSwitcher';
 
 const Navbar = () => {
   const { user, branches, activeBranchId, switchBranch, logout } = useAuth();
@@ -34,22 +35,29 @@ const Navbar = () => {
         {/* Center/Right: Branch Switcher, Theme & Color Customizer, Notification Center & User Profile */}
         <div className="flex items-center space-x-3">
 
-          {/* Active Branch Switcher */}
+          {/* Active Branch Display / Switcher */}
           {branches.length > 0 && (
             <div className="flex items-center space-x-2 bg-slate-800 border border-slate-700 px-3 py-1.5 rounded-lg text-xs">
               <Store className="w-4 h-4 text-emerald-400" />
               <span className="text-slate-300 font-medium hidden md:inline">Branch:</span>
-              <select
-                value={activeBranchId}
-                onChange={(e) => switchBranch(e.target.value)}
-                className="bg-transparent text-white font-semibold outline-none cursor-pointer text-xs"
-              >
-                {branches.map((b) => (
-                  <option key={b._id} value={b._id} className="bg-slate-900 text-white">
-                    {b.name} ({b.code}){b.isHeadquarter ? ' ★ HQ' : ''}
-                  </option>
-                ))}
-              </select>
+              {['Owner', 'SuperAdmin'].includes(user?.role) && branches.length > 1 ? (
+                <select
+                  value={activeBranchId}
+                  onChange={(e) => switchBranch(e.target.value)}
+                  className="bg-transparent text-white font-semibold outline-none cursor-pointer text-xs"
+                >
+                  {branches.map((b) => (
+                    <option key={b._id} value={b._id} className="bg-slate-900 text-white">
+                      {b.name} ({b.code}){b.isHeadquarter ? ' ★ HQ' : ''}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <span className="text-white font-semibold">
+                  {branches.find(b => b._id === activeBranchId)?.name || branches[0]?.name || 'Assigned Branch'}
+                  {branches.find(b => b._id === activeBranchId)?.code ? ` (${branches.find(b => b._id === activeBranchId)?.code})` : ''}
+                </span>
+              )}
             </div>
           )}
 
@@ -85,6 +93,9 @@ const Navbar = () => {
               </div>
             )}
           </div>
+
+          {/* Language Switcher (Urdu / English / Spanish) */}
+          <LanguageSwitcher />
 
           {/* Live Notification Center Dropdown */}
           <NotificationBell />

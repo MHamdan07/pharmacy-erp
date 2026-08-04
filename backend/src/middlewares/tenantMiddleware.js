@@ -13,29 +13,38 @@ export const attachTenant = async (req, res, next) => {
       .populate('assignedBranches');
 
     if (!user || !user.isActive) {
-      return res.status(401).json({ message: 'User not active or found' });
+      return res.status(401).json({ message: 'User account is inactive or not found' });
     }
 
     req.userFull = user;
 
     const pharmacy = user.pharmacy;
     if (!pharmacy) {
-      return res.status(403).json({ message: 'No pharmacy associated with this user' });
+      return res.status(403).json({ message: 'No pharmacy organization associated with this user account' });
     }
 
-    // Determine active branch context: check X-Branch-ID header or fallback to assigned user.branch
+    // Determine active branch context
     const headerBranchId = req.headers['x-branch-id'];
-    let activeBranchId = user.branch ? user.branch._id.toString() : null;
+    let activeBranchId = user.branch ? (user.branch._id || user.branch).toString() : null;
+
+    const isOwnerOrSuperAdmin = ['SuperAdmin', 'Owner'].includes(user.role);
 
     if (headerBranchId) {
-      const canAccess =
-        ['SuperAdmin', 'Owner', 'Admin'].includes(user.role) ||
-        user.assignedBranches?.some(b => b._id.toString() === headerBranchId) ||
-        user.branch?._id.toString() === headerBranchId;
+      const isUserAssignedBranch =
+        (user.branch && (user.branch._id || user.branch).toString() === headerBranchId) ||
+        (user.assignedBranches && user.assignedBranches.some(b => (b._id || b).toString() === headerBranchId));
 
-      if (canAccess) {
+      if (isOwnerOrSuperAdmin || isUserAssignedBranch) {
         activeBranchId = headerBranchId;
+      } else {
+        // Non-owner staff attempting to access unassigned branch
+        return res.status(403).json({
+          message: 'Access denied: Branch staff can only access their assigned branch. Only pharmacy owners can switch branches.'
+        });
       }
+    } else if (!isOwnerOrSuperAdmin && user.branch) {
+      // Strictly force primary assigned branch for non-owner staff
+      activeBranchId = (user.branch._id || user.branch).toString();
     }
 
     req.pharmacyId = pharmacy._id;

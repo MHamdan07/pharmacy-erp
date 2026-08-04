@@ -163,6 +163,42 @@ const seedDatabase = async () => {
       phone: '+1 555 0113'
     });
 
+    // 6. Inventory Staff
+    const inventory1 = await User.create({
+      name: 'Marcus Vance (Inventory Manager)',
+      email: 'inventory@pharmacy.com',
+      password: 'InventoryPass@2026!',
+      role: 'Inventory Staff',
+      pharmacy: pharmacy1._id,
+      branch: branch1_1._id,
+      assignedBranches: [branch1_1._id],
+      phone: '+1 555 0117'
+    });
+
+    // 7. Delivery Staff
+    const delivery1 = await User.create({
+      name: 'Tariq Mahmood (Delivery Driver)',
+      email: 'delivery@pharmacy.com',
+      password: 'DeliveryPass@2026!',
+      role: 'Delivery Staff',
+      pharmacy: pharmacy1._id,
+      branch: branch1_1._id,
+      assignedBranches: [branch1_1._id],
+      phone: '+1 555 0118'
+    });
+
+    // 8. Customer Account
+    const customerUser1 = await User.create({
+      name: 'John Customer (Patient Portal)',
+      email: 'customer@pharmacy.com',
+      password: 'CustomerPass@2026!',
+      role: 'Customer',
+      pharmacy: pharmacy1._id,
+      branch: branch1_1._id,
+      assignedBranches: [branch1_1._id],
+      phone: '+1 555 9988'
+    });
+
     console.log('📦 Creating Categories & Suppliers...');
 
     const categoryNames = [

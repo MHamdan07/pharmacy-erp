@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { NavLink } from 'react-router-dom';
 import API from '../api/axios';
+import { useLanguage } from '../context/LanguageContext';
+import { useAuth } from '../context/AuthContext';
 import {
   LayoutDashboard,
   ShoppingCart,
@@ -21,6 +23,8 @@ import {
 } from 'lucide-react';
 
 const Sidebar = () => {
+  const { t } = useLanguage();
+  const { user } = useAuth();
   const [featureFlags, setFeatureFlags] = useState(null);
   const [currentPlan, setCurrentPlan] = useState('Professional');
 
@@ -41,29 +45,32 @@ const Sidebar = () => {
   }, [fetchFlags]);
 
   const allNavItems = [
-    { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
-    { label: 'POS Billing', path: '/pos', icon: ShoppingCart, highlight: true, flag: 'pos' },
-    { label: 'Prescription & AI OCR', path: '/prescriptions', icon: FileText, highlight: true },
-    { label: 'Customer E-Storefront', path: '/store', icon: ShoppingBag },
-    { label: 'Inventory & Batches', path: '/inventory', icon: Pill, flag: 'inventory' },
-    { label: 'Expiry & FEFO Control', path: '/expiry', icon: Clock, flag: 'expiry' },
+    { label: t('dashboard', 'Dashboard'), path: '/dashboard', icon: LayoutDashboard },
+    { label: t('posBilling', 'POS Billing'), path: '/pos', icon: ShoppingCart, highlight: true, flag: 'pos' },
+    { label: t('prescriptions', 'Prescription & AI OCR'), path: '/prescriptions', icon: FileText, highlight: true },
+    { label: t('storefront', 'Customer E-Storefront'), path: '/store', icon: ShoppingBag },
+    { label: t('inventory', 'Inventory & Batches'), path: '/inventory', icon: Pill, flag: 'inventory' },
+    { label: t('expiryManagement', 'Expiry & FEFO Control'), path: '/expiry', icon: Clock, flag: 'expiry' },
     { label: 'Barcode & Shelf Labels', path: '/barcode-labels', icon: Barcode, flag: 'barcode' },
     { label: 'Risks & Safety Matrix', path: '/risk-matrix', icon: ShieldCheck, flag: 'riskMatrix' },
-    { label: 'Stock Transfers', path: '/transfers', icon: ArrowLeftRight, flag: 'transfers' },
-    { label: 'Purchases & Suppliers', path: '/purchases', icon: Truck, flag: 'purchases' },
-    { label: 'Patients & Customers', path: '/customers', icon: Users, flag: 'customers' },
-    { label: 'Backup & Restore', path: '/backups', icon: Database, flag: 'backups' },
-    { label: 'Branch & Staff Admin', path: '/settings/branches', icon: Building2, flag: 'multiBranch' },
-    { label: 'Employee Staff Roster', path: '/employees', icon: Users },
-    { label: 'System Settings', path: '/system-settings', icon: Settings },
-    { label: 'SuperAdmin SaaS Console', path: '/superadmin', icon: ShieldCheck, highlight: true },
-    { label: 'My Subscription', path: '/settings/subscription', icon: CreditCard, highlight: true },
-    { label: 'Pharmacy Settings', path: '/settings/pharmacy', icon: Settings },
-    { label: 'Reports & Audit', path: '/reports', icon: FileBarChart, flag: 'reports' }
+    { label: t('stockTransfers', 'Stock Transfers'), path: '/transfers', icon: ArrowLeftRight, flag: 'transfers' },
+    { label: t('suppliers', 'Purchases & Suppliers'), path: '/purchases', icon: Truck, flag: 'purchases' },
+    { label: t('customers', 'Patients & Customers'), path: '/customers', icon: Users, flag: 'customers' },
+    { label: t('backupRestore', 'Backup & Restore'), path: '/backups', icon: Database, flag: 'backups' },
+    { label: t('branchManagement', 'Branch Management'), path: '/settings/branches', icon: Building2, ownerOnly: true, badge: 'Owner' },
+    { label: t('employees', 'Employee Staff Roster'), path: '/employees', icon: Users },
+    { label: t('settings', 'System Settings'), path: '/system-settings', icon: Settings },
+    { label: t('subscriptions', 'My Subscription'), path: '/settings/subscription', icon: CreditCard, highlight: true, ownerOnly: true },
+    { label: 'Pharmacy Settings', path: '/settings/pharmacy', icon: Settings, ownerOnly: true },
+    { label: t('reports', 'Reports & Audit'), path: '/reports', icon: FileBarChart, flag: 'reports' }
   ];
 
-  // Dynamically filter nav items: DONT SHOW modules in website if subscription does NOT have access
+  // Dynamically filter nav items: Owner-only items shown EXCLUSIVELY to Company Owner
   const visibleNavItems = allNavItems.filter((item) => {
+    if (item.superAdminOnly && user?.role !== 'SuperAdmin') return false;
+    if (item.ownerOnly) {
+      return user?.role === 'Owner';
+    }
     if (!item.flag) return true;
     if (!featureFlags) return true; // Show defaults while loading
     return featureFlags[item.flag] !== false;
@@ -82,7 +89,7 @@ const Sidebar = () => {
               key={item.path}
               to={item.path}
               className={({ isActive }) =>
-                `flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                `flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
                   isActive
                     ? 'bg-emerald-600 text-white shadow-md shadow-emerald-500/20 font-semibold'
                     : item.highlight
@@ -91,8 +98,15 @@ const Sidebar = () => {
                 }`
               }
             >
-              <Icon className="w-5 h-5 shrink-0" />
-              <span>{item.label}</span>
+              <div className="flex items-center space-x-3 truncate">
+                <Icon className="w-5 h-5 shrink-0" />
+                <span className="truncate">{item.label}</span>
+              </div>
+              {item.badge && (
+                <span className="bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[9px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider shrink-0 ml-1">
+                  {item.badge}
+                </span>
+              )}
             </NavLink>
           );
         })}
