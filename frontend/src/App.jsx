@@ -27,6 +27,8 @@ import EmployeeManagement from './pages/EmployeeManagement';
 import SystemSettings from './pages/SystemSettings';
 import LandingPage from './pages/LandingPage';
 import SuperAdminDashboard from './pages/SuperAdminDashboard';
+import NotFound from './pages/NotFound';
+import LegalPages from './pages/LegalPages';
 
 function App() {
   return (
@@ -36,6 +38,7 @@ function App() {
         <Route path="/" element={<LandingPage />} />
         <Route path="/landing" element={<LandingPage />} />
         <Route path="/store" element={<CustomerStorefront />} />
+        <Route path="/legal" element={<LegalPages />} />
         <Route path="/login" element={<Login />} />
         <Route path="/app/login" element={<Login />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
@@ -74,8 +77,8 @@ function App() {
           </Route>
         </Route>
 
-        {/* Fallback */}
-        <Route path="*" element={<Navigate to="/dashboard" replace />} />
+        {/* Fallback 404 Route */}
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </ToastProvider>
   );

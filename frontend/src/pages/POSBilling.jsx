@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import API from '../api/axios';
 import {
@@ -15,6 +15,7 @@ const POSBilling = () => {
   const [medicines, setMedicines] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [cart, setCart] = useState([]);
+  const cartContainerRef = useRef(null);
 
   // Mobile Tab State ('catalog' | 'cart')
   const [mobileTab, setMobileTab] = useState('catalog');
@@ -38,6 +39,16 @@ const POSBilling = () => {
   const [completedSale, setCompletedSale] = useState(null);
 
   const activeBranch = branches.find(b => b._id === activeBranchId) || user?.branch;
+
+  // Auto-scroll cart list to bottom whenever a medicine is added frequently
+  useEffect(() => {
+    if (cartContainerRef.current) {
+      cartContainerRef.current.scrollTo({
+        top: cartContainerRef.current.scrollHeight,
+        behavior: 'smooth'
+      });
+    }
+  }, [cart.length]);
 
   const fetchMedicines = useCallback(async () => {
     try {
@@ -161,7 +172,7 @@ const POSBilling = () => {
   );
 
   return (
-    <div className="flex flex-col space-y-4 min-h-[calc(100vh-5.5rem)] lg:h-[calc(100vh-5.5rem)] lg:max-h-[calc(100vh-5.5rem)] overflow-y-auto lg:overflow-hidden">
+    <div className="flex flex-col space-y-3 h-full min-h-0 flex-1 overflow-hidden">
       
       {/* Mobile / Tablet View Switcher Tabs */}
       <div className="flex lg:hidden bg-slate-900 p-1.5 rounded-xl border border-slate-800 gap-2 shrink-0">
@@ -185,10 +196,10 @@ const POSBilling = () => {
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 flex-1 min-h-0 overflow-hidden">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 flex-1 min-h-0 overflow-hidden">
         
         {/* LEFT: MEDICINE CATALOG & BARCODE SCANNER (7 cols) */}
-        <div className={`lg:col-span-7 flex flex-col space-y-4 h-full min-h-0 overflow-hidden ${mobileTab === 'catalog' ? 'flex' : 'hidden lg:flex'}`}>
+        <div className={`lg:col-span-7 flex flex-col space-y-3 h-full min-h-0 overflow-hidden ${mobileTab === 'catalog' ? 'flex' : 'hidden lg:flex'}`}>
           {/* Search & Barcode Input */}
           <div className="shrink-0">
             <Input
@@ -211,25 +222,25 @@ const POSBilling = () => {
                   variant="glass"
                   hoverGlow={!isOutOfStock}
                   onClick={() => addToCart(med)}
-                  className={`p-4 transition-all cursor-pointer flex flex-col justify-between ${
+                  className={`p-3.5 transition-all cursor-pointer flex flex-col justify-between ${
                     isOutOfStock
-                      ? 'opacity-60 cursor-not-allowed border-slate-800/60'
+                      ? 'opacity-60 cursor-not-allowed border-slate-800/60 dark:border-slate-800/60 light:border-slate-300'
                       : 'hover:border-blue-500/50 hover:scale-[1.01]'
                   }`}
                 >
                   <div>
                     <div className="flex justify-between items-start gap-2">
-                      <h3 className="font-bold text-white text-sm tracking-tight">{med.name}</h3>
+                      <h3 className="font-bold text-white dark:text-white light:text-slate-900 text-sm tracking-tight">{med.name}</h3>
                       {med.rxRequired && (
                         <Badge variant="danger" size="sm">Rx</Badge>
                       )}
                     </div>
-                    <p className="text-xs text-slate-400 mt-0.5">{med.brandName || med.genericName}</p>
-                    <p className="text-[10px] text-slate-500 font-mono mt-1">SKU: {med.sku} · {med.dosageForm}</p>
+                    <p className="text-xs text-slate-400 dark:text-slate-400 light:text-slate-600 mt-0.5">{med.brandName || med.genericName}</p>
+                    <p className="text-[10px] text-slate-500 dark:text-slate-500 light:text-slate-500 font-mono mt-1">SKU: {med.sku} · {med.dosageForm}</p>
                   </div>
 
-                  <div className="mt-3 flex justify-between items-center pt-2 border-t border-slate-800/80">
-                    <span className="text-base font-extrabold text-emerald-400">${med.unitPrice?.toFixed(2)}</span>
+                  <div className="mt-2.5 flex justify-between items-center pt-2 border-t border-slate-800/80 dark:border-slate-800/80 light:border-slate-200">
+                    <span className="text-base font-extrabold text-emerald-400 dark:text-emerald-400 light:text-emerald-600">${med.unitPrice?.toFixed(2)}</span>
                     <Badge variant={isOutOfStock ? 'danger' : 'success'} size="sm" dot pulse={isOutOfStock}>
                       {isOutOfStock ? 'Out of stock' : `${med.stockQty} in stock`}
                     </Badge>
@@ -242,17 +253,17 @@ const POSBilling = () => {
 
         {/* RIGHT: BILLING CART & PAYMENTS (5 cols) */}
         <div className={`lg:col-span-5 ${mobileTab === 'cart' ? 'flex' : 'hidden lg:flex'}`}>
-          <Card variant="glass" className="w-full p-5 shadow-xl flex flex-col justify-between h-full max-h-full overflow-hidden border border-slate-800/80">
+          <Card variant="glass" className="w-full p-4 shadow-xl flex flex-col justify-between h-full max-h-full overflow-hidden border border-slate-800/80 dark:border-slate-800/80 light:border-slate-200">
             <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
-              <div className="flex justify-between items-center border-b border-slate-800/80 pb-3 shrink-0">
-                <h2 className="text-base font-bold text-white flex items-center gap-2">
+              <div className="flex justify-between items-center border-b border-slate-800/80 dark:border-slate-800/80 light:border-slate-200 pb-2.5 shrink-0">
+                <h2 className="text-base font-bold text-white dark:text-white light:text-slate-900 flex items-center gap-2">
                   <ShoppingCart className="w-5 h-5 text-blue-400" /> Billing Cart ({cart.length})
                 </h2>
                 {cart.length > 0 && (
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="text-red-400 hover:text-red-300"
+                    className="text-red-400 hover:text-red-300 light:text-red-600 light:hover:text-red-700 text-xs py-1"
                     onClick={() => {
                       setCart([]);
                       toast.info('Cart cleared');
@@ -264,8 +275,8 @@ const POSBilling = () => {
               </div>
 
               {/* Patient Details & Prescription Upload */}
-              <div className="space-y-2 bg-slate-950/60 p-3 rounded-xl border border-slate-800/80 text-xs shrink-0 mt-3">
-                <div className="grid grid-cols-2 gap-2">
+              <div className="space-y-1.5 bg-slate-950/60 dark:bg-slate-950/60 light:bg-slate-100/80 p-2.5 rounded-xl border border-slate-800/80 dark:border-slate-800/80 light:border-slate-200 text-xs shrink-0 mt-2">
+                <div className="grid grid-cols-2 gap-1.5">
                   <Input
                     size="sm"
                     value={patientName}
@@ -279,7 +290,7 @@ const POSBilling = () => {
                     placeholder="Patient Phone"
                   />
                 </div>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-2 gap-1.5">
                   <Input
                     size="sm"
                     value={doctorName}
@@ -295,36 +306,39 @@ const POSBilling = () => {
                 </div>
               </div>
 
-              {/* DYNAMIC CART ITEMS CONTAINER */}
-              <div className="flex-1 min-h-0 overflow-y-auto pr-1 space-y-2 my-3">
+              {/* DYNAMIC CART ITEMS CONTAINER - SCROLLBAR APPEARS AFTER 3 MEDICINES (MAX HEIGHT 145PX) */}
+              <div
+                ref={cartContainerRef}
+                className="flex-1 min-h-[90px] max-h-[145px] overflow-y-auto pr-1.5 space-y-1.5 my-2 pos-cart-scrollbar"
+              >
                 {cart.length === 0 ? (
-                  <div className="text-center py-8 text-slate-500 text-xs italic flex flex-col items-center justify-center h-full space-y-1">
-                    <ShoppingCart className="w-8 h-8 text-slate-600 mb-1" />
-                    <span className="font-semibold text-slate-400">Cart is empty</span>
-                    <span className="text-[11px]">Select medicines from the catalog to start billing.</span>
+                  <div className="text-center py-6 text-slate-500 text-xs italic flex flex-col items-center justify-center h-full space-y-1">
+                    <ShoppingCart className="w-7 h-7 text-slate-500 mb-1" />
+                    <span className="font-semibold text-slate-400 dark:text-slate-400 light:text-slate-600">Cart is empty</span>
+                    <span className="text-[11px] text-slate-500 dark:text-slate-500 light:text-slate-500">Select medicines from the catalog to start billing.</span>
                   </div>
                 ) : (
                   cart.map((item, idx) => (
-                    <div key={idx} className="bg-slate-800/40 p-2.5 rounded-xl flex items-center justify-between border border-slate-700/50 text-xs hover:border-slate-700 transition-colors">
+                    <div key={idx} className="bg-slate-800/40 dark:bg-slate-800/40 light:bg-slate-100 p-2 rounded-xl flex items-center justify-between border border-slate-700/50 dark:border-slate-700/50 light:border-slate-300 text-xs hover:border-slate-600 transition-colors">
                       <div className="max-w-[170px]">
-                        <div className="font-bold text-white truncate">{item.name}</div>
-                        <div className="text-[10px] text-slate-400">${item.unitPrice?.toFixed(2)} / {item.unit}</div>
+                        <div className="font-bold text-white dark:text-white light:text-slate-900 truncate">{item.name}</div>
+                        <div className="text-[10px] text-slate-400 dark:text-slate-400 light:text-slate-600">${item.unitPrice?.toFixed(2)} / {item.unit}</div>
                       </div>
 
-                      <div className="flex items-center space-x-2 shrink-0">
+                      <div className="flex items-center space-x-1.5 shrink-0">
                         <Button
                           variant="secondary"
                           size="sm"
-                          className="w-7 h-7 p-0 justify-center"
+                          className="w-6 h-6 p-0 justify-center"
                           onClick={() => updateQuantity(idx, -1)}
                         >
                           <Minus className="w-3 h-3" />
                         </Button>
-                        <span className="font-bold text-white font-mono min-w-[20px] text-center">{item.quantity}</span>
+                        <span className="font-bold text-white dark:text-white light:text-slate-900 font-mono min-w-[18px] text-center text-xs">{item.quantity}</span>
                         <Button
                           variant="secondary"
                           size="sm"
-                          className="w-7 h-7 p-0 justify-center"
+                          className="w-6 h-6 p-0 justify-center"
                           onClick={() => updateQuantity(idx, 1)}
                         >
                           <Plus className="w-3 h-3" />
@@ -332,7 +346,7 @@ const POSBilling = () => {
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="p-1 text-red-400 hover:text-red-300 ml-1"
+                          className="p-1 text-red-400 hover:text-red-300 light:text-red-600 ml-0.5"
                           onClick={() => updateQuantity(idx, -item.quantity)}
                         >
                           <Trash2 className="w-3.5 h-3.5" />
@@ -344,18 +358,18 @@ const POSBilling = () => {
               </div>
             </div>
 
-            {/* Financial Summary & Payment Methods */}
-            <div className="pt-3 border-t border-slate-800/80 space-y-3 shrink-0">
-              <div className="space-y-1.5 text-xs">
-                <div className="flex justify-between text-slate-400">
+            {/* Financial Summary & Payment Methods - ALWAYS PERMANENTLY PINNED AT BOTTOM */}
+            <div className="pt-2 border-t border-slate-800/80 dark:border-slate-800/80 light:border-slate-200 space-y-2 shrink-0 mt-auto">
+              <div className="space-y-1 text-xs">
+                <div className="flex justify-between text-slate-400 dark:text-slate-400 light:text-slate-600">
                   <span>Subtotal:</span>
-                  <span className="font-mono text-white">${subtotal.toFixed(2)}</span>
+                  <span className="font-mono text-white dark:text-white light:text-slate-900 font-semibold">${subtotal.toFixed(2)}</span>
                 </div>
-                <div className="flex justify-between text-slate-400">
+                <div className="flex justify-between text-slate-400 dark:text-slate-400 light:text-slate-600">
                   <span>Tax (GST/VAT):</span>
-                  <span className="font-mono text-white">${tax.toFixed(2)}</span>
+                  <span className="font-mono text-white dark:text-white light:text-slate-900 font-semibold">${tax.toFixed(2)}</span>
                 </div>
-                <div className="flex justify-between text-slate-400 items-center gap-2">
+                <div className="flex justify-between text-slate-400 dark:text-slate-400 light:text-slate-600 items-center gap-2">
                   <span>Discount ($):</span>
                   <input
                     type="number"
@@ -363,23 +377,23 @@ const POSBilling = () => {
                     step="0.01"
                     value={discountAmount}
                     onChange={(e) => setDiscountAmount(Math.max(0, Number(e.target.value)))}
-                    className="w-24 bg-slate-900 border border-slate-700/80 rounded-lg px-2.5 py-1 text-right text-white font-mono text-xs focus:ring-2 focus:ring-accent outline-none"
+                    className="w-20 bg-slate-900 dark:bg-slate-900 light:bg-white border border-slate-700/80 dark:border-slate-700/80 light:border-slate-300 rounded-lg px-2 py-0.5 text-right text-white dark:text-white light:text-slate-900 font-mono text-xs focus:ring-2 focus:ring-accent outline-none"
                   />
                 </div>
-                <div className="flex justify-between font-extrabold text-base text-white pt-2 border-t border-slate-800/80">
+                <div className="flex justify-between font-extrabold text-sm sm:text-base text-white dark:text-white light:text-slate-900 pt-1.5 border-t border-slate-800/80 dark:border-slate-800/80 light:border-slate-200">
                   <span>Grand Total:</span>
-                  <span className="text-emerald-400">${grandTotal.toFixed(2)}</span>
+                  <span className="text-emerald-400 dark:text-emerald-400 light:text-emerald-600">${grandTotal.toFixed(2)}</span>
                 </div>
               </div>
 
               {/* Payment Method Selector Grid */}
-              <div className="grid grid-cols-3 gap-1.5 text-[11px] font-bold">
+              <div className="grid grid-cols-3 gap-1 text-[10px] font-bold">
                 <Button
                   variant={paymentMethod === 'cash' ? 'primary' : 'outline'}
                   size="sm"
                   leftIcon={DollarSign}
                   onClick={() => setPaymentMethod('cash')}
-                  className="py-1.5 px-2"
+                  className="py-1 px-1.5 text-[10px]"
                 >
                   Cash
                 </Button>
@@ -388,7 +402,7 @@ const POSBilling = () => {
                   size="sm"
                   leftIcon={CreditCard}
                   onClick={() => setPaymentMethod('card')}
-                  className="py-1.5 px-2"
+                  className="py-1 px-1.5 text-[10px]"
                 >
                   Card
                 </Button>
@@ -397,7 +411,7 @@ const POSBilling = () => {
                   size="sm"
                   leftIcon={Landmark}
                   onClick={() => setPaymentMethod('bank_transfer')}
-                  className="py-1.5 px-2"
+                  className="py-1 px-1.5 text-[10px]"
                 >
                   Bank
                 </Button>
@@ -406,7 +420,7 @@ const POSBilling = () => {
                   size="sm"
                   leftIcon={Smartphone}
                   onClick={() => setPaymentMethod('jazzcash')}
-                  className="py-1.5 px-2"
+                  className="py-1 px-1.5 text-[10px]"
                 >
                   JazzCash
                 </Button>
@@ -415,7 +429,7 @@ const POSBilling = () => {
                   size="sm"
                   leftIcon={Smartphone}
                   onClick={() => setPaymentMethod('easypaisa')}
-                  className="py-1.5 px-2"
+                  className="py-1 px-1.5 text-[10px]"
                 >
                   EasyPaisa
                 </Button>
@@ -424,7 +438,7 @@ const POSBilling = () => {
                   size="sm"
                   leftIcon={User}
                   onClick={() => setPaymentMethod('credit_account')}
-                  className="py-1.5 px-2"
+                  className="py-1 px-1.5 text-[10px]"
                 >
                   Credit
                 </Button>
@@ -432,12 +446,12 @@ const POSBilling = () => {
 
               <Button
                 variant="accent"
-                size="lg"
+                size="md"
                 fullWidth
                 isLoading={loading}
                 disabled={cart.length === 0 || loading}
                 onClick={handleCheckout}
-                className="bg-emerald-600 hover:bg-emerald-500 shadow-lg shadow-emerald-500/20 text-white font-bold"
+                className="bg-emerald-600 hover:bg-emerald-500 dark:bg-emerald-600 light:bg-emerald-600 light:hover:bg-emerald-700 text-white font-bold py-2 shadow-md shadow-emerald-500/20 text-xs sm:text-sm cursor-pointer"
               >
                 Complete Sale (${grandTotal.toFixed(2)})
               </Button>

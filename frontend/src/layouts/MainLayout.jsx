@@ -24,16 +24,16 @@ const MainLayout = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 dark:bg-slate-950 light:bg-slate-50 text-slate-100 dark:text-slate-100 light:text-slate-900 flex flex-col font-sans antialiased">
+    <div className="h-screen max-h-screen overflow-hidden bg-slate-950 dark:bg-slate-950 light:bg-slate-50 text-slate-100 dark:text-slate-100 light:text-slate-900 flex flex-col font-sans antialiased">
       {/* Persistent Top Navigation Bar */}
       <Navbar isMobileOpen={isMobileOpen} onToggleMobileMenu={toggleMobileMenu} />
 
-      <div className="flex flex-1 overflow-hidden relative">
+      <div className="flex flex-1 min-h-0 overflow-hidden relative">
         {/* Left Responsive Navigation Sidebar */}
         <Sidebar isMobileOpen={isMobileOpen} onCloseMobileMenu={closeMobileMenu} />
 
         {/* Main Operational Workspace Area */}
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 bg-slate-950 dark:bg-slate-950 light:bg-slate-50 min-w-0">
+        <main className="flex-1 min-h-0 overflow-y-auto lg:overflow-hidden p-3 sm:p-4 lg:p-5 bg-slate-950 dark:bg-slate-950 light:bg-slate-50 min-w-0 flex flex-col">
           <SubscriptionGatekeeper />
         </main>
       </div>

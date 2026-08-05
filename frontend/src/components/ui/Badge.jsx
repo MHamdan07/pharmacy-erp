@@ -31,7 +31,7 @@ export const Badge = ({
 
   return (
     <span
-      className={`inline-flex items-center gap-1.5 font-semibold rounded-full border tracking-wide uppercase ${appliedVariant} ${appliedSize} ${className}`}
+      className={`inline-flex items-center gap-1.5 font-mono-code font-medium rounded-full border tracking-wider uppercase ${appliedVariant} ${appliedSize} ${className}`}
       {...props}
     >
       {dot && <StatusDot variant={variant} pulse={pulse} size="sm" />}

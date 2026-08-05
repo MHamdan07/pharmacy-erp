@@ -98,9 +98,9 @@ export const DataTable = ({
                       <React.Fragment key={row._id || row.id || rowIndex}>
                         <tr
                           onClick={() => onRowClick && onRowClick(row)}
-                          className={`transition-colors duration-150 ${
+                          className={`data-row transition-colors duration-150 ${
                             onRowClick ? 'cursor-pointer' : ''
-                          } hover:bg-slate-800/50 dark:hover:bg-slate-800/50 light:hover:bg-slate-50 ${
+                          } hover:bg-slate-800/50 dark:hover:bg-slate-800/50 light:hover:bg-slate-100 ${
                             rowIndex % 2 === 1
                               ? 'bg-slate-950/20 dark:bg-slate-950/20 light:bg-slate-50/50'
                               : ''

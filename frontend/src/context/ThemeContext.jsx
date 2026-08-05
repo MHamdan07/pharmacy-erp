@@ -4,6 +4,7 @@ import { createContext, useContext, useState, useEffect } from 'react';
 const ThemeContext = createContext();
 
 const ACCENT_COLOR_MAP = {
+  teal: { name: 'Healthcare Teal', bg: 'bg-teal-600', text: 'text-teal-500', hex: '#0d9488' },
   blue: { name: 'Ocean Blue', bg: 'bg-blue-600', text: 'text-blue-500', hex: '#2563eb' },
   emerald: { name: 'Emerald Green', bg: 'bg-emerald-600', text: 'text-emerald-500', hex: '#059669' },
   purple: { name: 'Royal Purple', bg: 'bg-purple-600', text: 'text-purple-500', hex: '#9333ea' },
@@ -13,15 +14,17 @@ const ACCENT_COLOR_MAP = {
 
 export const ThemeProvider = ({ children }) => {
   const [themeMode, setThemeMode] = useState(localStorage.getItem('themeMode') || 'dark');
-  const [accentColor, setAccentColor] = useState(localStorage.getItem('accentColor') || 'blue');
+  const [accentColor, setAccentColor] = useState(localStorage.getItem('accentColor') || 'teal');
 
   useEffect(() => {
     localStorage.setItem('themeMode', themeMode);
     if (themeMode === 'light') {
       document.documentElement.classList.add('light-mode');
+      document.documentElement.classList.add('light');
       document.documentElement.classList.remove('dark');
     } else {
       document.documentElement.classList.remove('light-mode');
+      document.documentElement.classList.remove('light');
       document.documentElement.classList.add('dark');
     }
   }, [themeMode]);

@@ -20,7 +20,9 @@ import {
   CreditCard,
   FileText,
   ShoppingBag,
-  X
+  X,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 
 const Sidebar = ({ isMobileOpen = false, onCloseMobileMenu }) => {
@@ -28,6 +30,7 @@ const Sidebar = ({ isMobileOpen = false, onCloseMobileMenu }) => {
   const { user } = useAuth();
   const [featureFlags, setFeatureFlags] = useState(null);
   const [currentPlan, setCurrentPlan] = useState('Professional');
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
   const fetchFlags = useCallback(async () => {
     try {
@@ -93,34 +96,48 @@ const Sidebar = ({ isMobileOpen = false, onCloseMobileMenu }) => {
         />
       )}
 
-      {/* Sidebar Content (Sticky Desktop, Off-Canvas Slide Drawer Mobile) */}
+      {/* Sidebar Content (Dark Navy #0c1628 background, Collapsible Icon-Only Mode) */}
       <aside
-        className={`w-64 bg-slate-900 dark:bg-slate-900 light:bg-white border-r border-slate-800 dark:border-slate-800 light:border-slate-200 flex flex-col justify-between shrink-0 transition-transform duration-300 ease-in-out z-50 fixed inset-y-0 left-0 lg:static lg:z-auto lg:h-[calc(100vh-4rem)] lg:sticky lg:top-16 lg:translate-x-0 ${
-          isMobileOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full lg:translate-x-0'
-        }`}
+        className={`bg-[#0c1628] border-r border-slate-800/80 flex flex-col justify-between shrink-0 transition-all duration-300 ease-in-out z-30 fixed inset-y-0 left-0 lg:static lg:z-auto lg:h-full lg:translate-x-0 ${
+          isCollapsed ? 'lg:w-20' : 'lg:w-72'
+        } ${isMobileOpen ? 'w-72 translate-x-0 shadow-2xl' : '-translate-x-full lg:translate-x-0'}`}
       >
-        <div className="flex flex-col h-full overflow-y-auto">
+        <div className="flex flex-col h-full overflow-y-auto overflow-x-hidden">
           {/* Mobile Drawer Header */}
-          <div className="p-4 border-b border-slate-800 dark:border-slate-800 light:border-slate-200 flex items-center justify-between lg:hidden shrink-0">
-            <div className="flex items-center space-x-2">
-              <Building2 className="w-5 h-5 text-accent" />
-              <span className="font-bold text-sm text-slate-100 dark:text-slate-100 light:text-slate-900">
-                Pharmacy Navigation
+          <div className="p-4 border-b border-slate-800/80 flex items-center justify-between lg:hidden shrink-0">
+            <div className="flex items-center space-x-2.5 min-w-0">
+              <div className="p-1.5 rounded-lg bg-accent/20 border border-accent/30 text-accent shrink-0">
+                <Building2 className="w-5 h-5" />
+              </div>
+              <span className="font-bold text-sm text-white font-display leading-tight break-words">
+                {user?.pharmacy?.name || 'Pharmacy ERP'}
               </span>
             </div>
             <button
               onClick={onCloseMobileMenu}
-              className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 dark:hover:bg-slate-800 light:hover:bg-slate-100 cursor-pointer"
+              className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 cursor-pointer shrink-0 ml-2"
               aria-label="Close menu"
             >
               <X className="w-5 h-5" />
             </button>
           </div>
 
-          <div className="p-4 space-y-1 flex-1">
-            <div className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-500">
-              Pharmacy Operations
-            </div>
+          <div className="p-3 space-y-1 flex-1">
+            {!isCollapsed && (
+              <div className="flex items-center space-x-2.5 px-3 py-2.5 mb-2 border-b border-slate-800/60">
+                <div className="p-1.5 rounded-lg bg-accent/20 border border-accent/30 text-accent shrink-0">
+                  <Building2 className="w-5 h-5" />
+                </div>
+                <span className="font-bold text-sm sm:text-base text-white font-display leading-tight break-words">
+                  {user?.pharmacy?.name || 'Pharmacy ERP'}
+                </span>
+              </div>
+            )}
+            {!isCollapsed && (
+              <div className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest text-white/70 font-mono-code transition-opacity">
+                Pharmacy Operations
+              </div>
+            )}
             {visibleNavItems.map((item) => {
               const Icon = item.icon;
               return (
@@ -128,22 +145,23 @@ const Sidebar = ({ isMobileOpen = false, onCloseMobileMenu }) => {
                   key={item.path}
                   to={item.path}
                   onClick={handleNavClick}
+                  title={isCollapsed ? item.label : undefined}
                   className={({ isActive }) =>
-                    `flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
+                    `flex items-center ${isCollapsed ? 'justify-center px-0 py-2.5' : 'justify-between px-3.5 py-2.5'} rounded-xl text-sm font-medium transition-all ${
                       isActive
-                        ? 'bg-accent text-white shadow-md shadow-accent/20 font-semibold'
+                        ? 'bg-accent text-white shadow-lg shadow-accent/25 font-semibold tracking-tight'
                         : item.highlight
                         ? 'text-accent hover:bg-accent-soft'
-                        : 'text-slate-300 dark:text-slate-300 light:text-slate-700 hover:bg-slate-800/80 dark:hover:bg-slate-800/80 light:hover:bg-slate-100 hover:text-white'
+                        : 'text-white/90 hover:bg-slate-800/70 hover:text-white'
                     }`
                   }
                 >
-                  <div className="flex items-center space-x-3 truncate">
+                  <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'space-x-3'} truncate`}>
                     <Icon className="w-5 h-5 shrink-0" />
-                    <span className="truncate">{item.label}</span>
+                    {!isCollapsed && <span className="truncate">{item.label}</span>}
                   </div>
-                  {item.badge && (
-                    <span className="bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[9px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider shrink-0 ml-1">
+                  {!isCollapsed && item.badge && (
+                    <span className="bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[9px] font-bold font-mono-code px-1.5 py-0.5 rounded uppercase tracking-wider shrink-0 ml-1">
                       {item.badge}
                     </span>
                   )}
@@ -152,23 +170,50 @@ const Sidebar = ({ isMobileOpen = false, onCloseMobileMenu }) => {
             })}
           </div>
 
-          <div className="p-4 border-t border-slate-800 dark:border-slate-800 light:border-slate-200 shrink-0">
-            <NavLink
-              to="/settings/subscription"
-              onClick={handleNavClick}
-              className="bg-slate-800/80 dark:bg-slate-800/80 light:bg-slate-100 hover:bg-slate-800 border border-slate-700/80 dark:border-slate-700/80 light:border-slate-300 rounded-xl p-3 text-xs text-slate-400 block transition-all"
+          {/* Desktop Sidebar Collapse Toggle + Subscription Card */}
+          <div className="p-3 border-t border-slate-800/80 shrink-0 space-y-2">
+            {!isCollapsed ? (
+              <NavLink
+                to="/settings/subscription"
+                onClick={handleNavClick}
+                className="bg-slate-900/80 hover:bg-slate-800 border border-slate-800 rounded-xl p-3 text-xs text-white/90 block transition-all"
+              >
+                <div>
+                  <div className="font-bold text-white flex items-center gap-1.5 mb-0.5 font-display">
+                    <CreditCard className="w-4 h-4 text-accent" />
+                    {currentPlan} Plan
+                  </div>
+                  <div className="flex items-center gap-1.5 text-[11px] text-emerald-400 font-medium">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                    Active Subscription
+                  </div>
+                </div>
+              </NavLink>
+            ) : (
+              <NavLink
+                to="/settings/subscription"
+                title={`${currentPlan} Plan - Active`}
+                className="flex items-center justify-center p-2.5 rounded-xl bg-slate-900/80 border border-slate-800 text-accent hover:bg-slate-800"
+              >
+                <CreditCard className="w-5 h-5" />
+              </NavLink>
+            )}
+
+            {/* Desktop Expand/Collapse Sidebar Button */}
+            <button
+              onClick={() => setIsCollapsed(!isCollapsed)}
+              className="hidden lg:flex items-center justify-center w-full py-2 rounded-xl text-white/80 hover:text-white hover:bg-slate-800/60 border border-slate-800/60 cursor-pointer transition-all text-xs font-medium gap-2"
+              title={isCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar'}
             >
-              <div>
-                <div className="font-bold text-white dark:text-white light:text-slate-900 flex items-center gap-1.5 mb-0.5">
-                  <CreditCard className="w-4 h-4 text-accent" />
-                  {currentPlan} Plan
-                </div>
-                <div className="flex items-center gap-1.5 text-[11px] text-emerald-400 font-medium">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                  Active Subscription
-                </div>
-              </div>
-            </NavLink>
+              {isCollapsed ? (
+                <ChevronRight className="w-4 h-4" />
+              ) : (
+                <>
+                  <ChevronLeft className="w-4 h-4" />
+                  <span>Collapse Menu</span>
+                </>
+              )}
+            </button>
           </div>
         </div>
       </aside>

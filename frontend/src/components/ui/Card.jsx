@@ -11,7 +11,7 @@ export const CardHeader = ({ children, className = '', ...props }) => (
 
 export const CardTitle = ({ children, className = '', ...props }) => (
   <h3
-    className={`text-lg font-bold text-slate-100 dark:text-slate-100 light:text-slate-900 tracking-tight flex items-center gap-2 ${className}`}
+    className={`text-lg font-bold font-display text-slate-100 dark:text-slate-100 light:text-slate-900 tracking-tight flex items-center gap-2 ${className}`}
     {...props}
   >
     {children}
@@ -52,6 +52,7 @@ export const Card = ({
 }) => {
   const variantStyles = {
     glass: 'glass-card',
+    kpi: 'kpi-card',
     solid:
       'bg-slate-900 border border-slate-800 dark:bg-slate-900 dark:border-slate-800 light:bg-white light:border-slate-200 shadow-lg rounded-2xl',
     outline:

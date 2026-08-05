@@ -1,0 +1,16 @@
+# User-agent directive for Pharmacy ERP SaaS
+User-agent: *
+Allow: /
+Allow: /store
+Allow: /landing
+Allow: /login
+Allow: /register-tenant
+Disallow: /dashboard
+Disallow: /superadmin
+Disallow: /pos
+Disallow: /prescriptions
+Disallow: /inventory
+Disallow: /reports
+Disallow: /settings
+
+Sitemap: https://pharmacy-erp-saas.com/sitemap.xml

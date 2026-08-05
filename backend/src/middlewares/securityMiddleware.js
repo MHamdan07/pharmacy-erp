@@ -3,7 +3,7 @@
 // In-memory rate limiting map
 const ipRequestMap = new Map();
 
-export const rateLimiter = (options = { windowMs: 15 * 60 * 1000, max: 100 }) => {
+export const rateLimiter = (options = { windowMs: 15 * 60 * 1000, max: 5000 }) => {
   return (req, res, next) => {
     const ip = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress || '127.0.0.1';
     const now = Date.now();
